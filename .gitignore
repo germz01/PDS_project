@@ -1,1 +1,4 @@
 .DS_Store
+output_dir*
+sources/main
+sources/main.dSYM/

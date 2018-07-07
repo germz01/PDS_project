@@ -15,6 +15,7 @@ using namespace cimg_library;
 
 std::mutex IMAGES_MUTEX;
 std::atomic_int PROCESSED_IMAGES = 0;
+double OVERHEAD_TIME = 0.0;
 
 void apply_watermark(std::queue<std::string>& images, CImg<unsigned char>& watermark, int workload, \
                      std::string output_dir, int id) {
@@ -25,6 +26,7 @@ void apply_watermark(std::queue<std::string>& images, CImg<unsigned char>& water
 
     while (!stop) {
         IMAGES_MUTEX.lock();
+        auto ot_start = std::chrono::high_resolution_clock::now();
         while(counter < workload) {
             if (images.empty()) {
                 counter = workload;
@@ -35,6 +37,9 @@ void apply_watermark(std::queue<std::string>& images, CImg<unsigned char>& water
                 counter += 1;
             }
         }
+        auto ot_end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::ratio<1>> ot_time = ot_end - ot_start;
+        OVERHEAD_TIME += ot_time.count();
         IMAGES_MUTEX.unlock();
 
         counter = 0;
@@ -128,9 +133,9 @@ int main(int argc, char const *argv[]) {
                 std::string fname = images.front().substr(images.front().find_last_of('/') + 1);
 
                 try {
-                    img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
+                    img.save_jpeg(((std::string)argv[4] + (std::string)"/" + fname).c_str());
                 } catch (CImgIOException e) {
-                    img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
+                    img.save_jpeg(((std::string)argv[4] + (std::string)"/" + fname).c_str());
                 }
 
                 images.pop();
@@ -141,7 +146,6 @@ int main(int argc, char const *argv[]) {
         }
     } else {
         int workload = (int)images.size() / par_degree;
-        // std::cout << "MAIN THREAD: WORKLOAD " << workload << std::endl;
         std::thread workers[par_degree];
 
         for (int i = 0; i < par_degree; i++) {
@@ -160,6 +164,7 @@ int main(int argc, char const *argv[]) {
 
     std::cout << "\nPARALLELISM DEGREE: " << par_degree << std::endl;
     std::cout << "COMPLETION TIME: " << completion_time.count() << " SECONDS" << std::endl;
+    std::cout << "TOTAL OVERHEAD TIME: " << OVERHEAD_TIME << " SECONDS" << std::endl;
     std::cout << "PROCESSED IMAGES: " << PROCESSED_IMAGES << std::endl;
 
     return 0;

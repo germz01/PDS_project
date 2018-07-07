@@ -79,7 +79,6 @@ void apply_watermark(std::queue<std::string>& images, CImg<unsigned char>& water
 
 int main(int argc, char const *argv[]) {
     auto completion_time_start = std::chrono::high_resolution_clock::now();
-
     if (argc != 5) {
         std::cout << "MISSING PARAMETERS!" << std::endl;
 

@@ -1,0 +1,31 @@
+\documentclass[11pt, twoside]{report}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{helvet}
+\usepackage[a4paper,width=180mm,top=20mm,bottom=20mm,bindingoffset=6mm]{geometry}
+\usepackage[framemethod=default]{mdframed}
+\usepackage{lipsum,titlesec,xcolor,fancyhdr,array,multicol,float,graphicx,wrapfig,subcaption}
+\usepackage{fontspec,todonotes,enumitem,comment,capt-of,amsmath,booktabs}
+\usepackage[colorlinks]{hyperref}
+\usepackage[font=scriptsize]{caption}
+
+\renewcommand{\familydefault}{\sfdefault}
+
+\graphicspath{{imgs/}}
+
+\hypersetup {
+    colorlinks,
+    citecolor= green,
+    filecolor= black,
+    linkcolor= black,
+    urlcolor= black
+}
+
+\begin{document}
+    \input{chaps/titlepage/titlepage}
+    \pagenumbering{Roman}
+    \tableofcontents
+    \input{chaps/1/1}
+    \pagenumbering{arabic}
+\end{document}

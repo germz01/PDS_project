@@ -1,4 +1,17 @@
 .DS_Store
 output_dir*
+report/*.aux
+report/*.fdb_latexmk
+report/*.fls
+report/*.log
+report/*.out
+report/*.pdf
+report/*.synctex.gz
+report/*.toc
+report/*.xdv
+report/chaps/titlepage/titlepage.aux
+report/chaps/titlepage/titlepage.fdb_latexmk
+report/chaps/titlepage/titlepage.fls
+report/chaps/titlepage/titlepage.log
 sources/main
 sources/main.dSYM/

@@ -17,6 +17,8 @@ using namespace cimg_library;
 #define W 1024
 #define H 768
 
+namespace fs = std::experimental::filesystem;
+
 std::mutex IMAGES_MUTEX;
 std::atomic_int PROCESSED_IMAGES = 0;
 double OVERHEAD_TIME = 0.0;
@@ -91,7 +93,7 @@ int main(int argc, char const *argv[]) {
 
     int par_degree = std::atoi(argv[3]);
 
-    if (!(std::filesystem::exists(argv[2]))) {
+    if (!(fs::exists(argv[2]))) {
         std::cout << "WATERMARK NOT FOUND!" << std::endl;
 
         return -1;
@@ -100,13 +102,13 @@ int main(int argc, char const *argv[]) {
     CImg<unsigned char> watermark(argv[2]);
     std::queue<std::string> images;
 
-    if (!(std::filesystem::exists(argv[1]))) {
+    if (!(fs::exists(argv[1]))) {
         std::cout << "IMAGES' DIRECTORY NOT FOUND!" << std::endl;
 
         return -1;
     }
 
-    for (auto& path : std::filesystem::directory_iterator(argv[1])) {
+    for (auto& path : fs::directory_iterator(argv[1])) {
         std::string fname = path.path().string().substr(path.path().string().find_last_of('/') + 1);
 
         if (fname != ".DS_Store") {
@@ -114,8 +116,8 @@ int main(int argc, char const *argv[]) {
         }
     }
 
-    if (!(std::filesystem::exists((std::string)argv[4]))) {
-        std::filesystem::create_directory((std::string)argv[4]);
+    if (!(fs::exists((std::string)argv[4]))) {
+        fs::create_directory((std::string)argv[4]);
     }
 
     if (par_degree == 1) {

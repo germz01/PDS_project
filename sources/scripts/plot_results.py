@@ -23,5 +23,6 @@ for t in ['completion', 'overhead']:
     plt.ylabel(t.upper() + ' TIME (SECONDS)')
     plt.grid()
     plt.tight_layout()
-    plt.savefig('./' + t + '_time.pdf', format='pdf', bbox_inches='tight')
+    plt.savefig('../../report/imgs/' + t + '_time.pdf', format='pdf',
+                bbox_inches='tight')
     plt.clf()

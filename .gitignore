@@ -13,5 +13,11 @@ report/chaps/titlepage/titlepage.aux
 report/chaps/titlepage/titlepage.fdb_latexmk
 report/chaps/titlepage/titlepage.fls
 report/chaps/titlepage/titlepage.log
+pds.sublime-project
+pds.sublime-workspace
+report/chaps/1/1.aux
+report/chaps/1/1.fdb_latexmk
+report/chaps/1/1.fls
+report/chaps/1/1.log
 sources/main
 sources/main.dSYM/

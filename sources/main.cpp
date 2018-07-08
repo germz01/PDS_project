@@ -13,6 +13,10 @@
 
 using namespace cimg_library;
 
+#define IMG_NUM 44
+#define W 1024
+#define H 768
+
 std::mutex IMAGES_MUTEX;
 std::atomic_int PROCESSED_IMAGES = 0;
 double OVERHEAD_TIME = 0.0;
@@ -118,7 +122,7 @@ int main(int argc, char const *argv[]) {
         while(!(images.empty())) {
             CImg<unsigned char> img(images.front().c_str());
 
-            if (!(img.width() != 1024 || img.height() != 768)) {
+            if (!(img.width() != W || img.height() != H)) {
                 cimg_forXY(watermark, x, y) {
                     int R = (int)watermark(x, y, 0, 0);
 
@@ -143,6 +147,10 @@ int main(int argc, char const *argv[]) {
                 images.pop();
             }
         }
+    } else if (par_degree > IMG_NUM){
+        std::cout << "THE PARALLELISM DEGREE CAN'T BE GREATER THAN " << IMG_NUM << std::endl;
+
+        return -1;
     } else {
         int workload = (int)images.size() / par_degree;
         std::thread workers[par_degree];

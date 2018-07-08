@@ -21,6 +21,7 @@ for t in ['completion', 'overhead']:
     plt.title(t.upper() + ' TIME PER PARALLELISM DEGREE')
     plt.xlabel('PARALLELISM DEGREE')
     plt.ylabel(t.upper() + ' TIME (SECONDS)')
+    plt.grid()
     plt.tight_layout()
     plt.savefig('./' + t + '_time.pdf', format='pdf', bbox_inches='tight')
     plt.clf()

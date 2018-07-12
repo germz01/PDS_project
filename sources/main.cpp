@@ -24,7 +24,7 @@ std::atomic_int PROCESSED_IMAGES = 0;
 double OVERHEAD_TIME = 0.0;
 
 void apply_watermark(std::queue<std::string>& images, CImg<unsigned char>& watermark, int workload, \
-                     std::string output_dir, int id) {
+                     std::string output_dir) {
     std::queue<std::string> to_process;
     int counter = 0;
     bool stop = false;
@@ -159,7 +159,7 @@ int main(int argc, char const *argv[]) {
 
         for (int i = 0; i < par_degree; i++) {
             workers[i] = std::thread(apply_watermark, std::ref(images), std::ref(watermark), workload, \
-                                     (std::string)argv[4], i);
+                                     (std::string)argv[4]);
         }
 
         for (int i = 0; i < par_degree; i++) {

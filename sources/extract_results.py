@@ -10,8 +10,8 @@ parser.add_argument('-l', '--loop', type=int,
                     ' have to be executed.')
 args = vars(parser.parse_args())
 
-out = subprocess.check_output(['./main', '../imgs', '../watermark.jpg', '1',
-                               '../output_dir'])
+# out = subprocess.check_output(['./main', '../imgs', '../watermark.jpg', '1',
+#                                '../output_dir'])
 
 with open('../results/performance.csv', 'w') as csvfile:
     fieldnames = ['PARALLELISM DEGREE', 'COMPLETION TIME', 'OVERHEAD TIME']

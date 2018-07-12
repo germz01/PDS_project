@@ -8,9 +8,11 @@ parser = argparse.ArgumentParser(description="This script collects data" +
 parser.add_argument('-l', '--loop', type=int,
                     help='Number of iterations the main program' +
                     ' have to be executed.')
+parser.add_argument('-n', '--name', type=str,
+                    help='Name of the file in which the results will be saved')
 args = vars(parser.parse_args())
 
-with open('../results/performance.csv', 'w') as csvfile:
+with open('../results/' + args['name'] + '.csv', 'w') as csvfile:
     fieldnames = ['PARALLELISM DEGREE', 'COMPLETION TIME', 'OVERHEAD TIME']
 
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)

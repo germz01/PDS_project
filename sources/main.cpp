@@ -1,4 +1,5 @@
 #include <atomic>
+#include <cassert>
 #include <chrono>
 #include "CImg.h"
 #include <cstdlib>
@@ -85,28 +86,12 @@ void apply_watermark(std::queue<std::string>& images, CImg<unsigned char>& water
 
 int main(int argc, char const *argv[]) {
     auto completion_time_start = std::chrono::high_resolution_clock::now();
-    if (argc != 5) {
-        std::cout << "MISSING PARAMETERS!" << std::endl;
 
-        return -1;
-    }
+    assert((argc == 5) && fs::exists(argv[2]) && fs::exists(argv[1]));
 
     int par_degree = std::atoi(argv[3]);
-
-    if (!(fs::exists(argv[2]))) {
-        std::cout << "WATERMARK NOT FOUND!" << std::endl;
-
-        return -1;
-    }
-
     CImg<unsigned char> watermark(argv[2]);
     std::queue<std::string> images;
-
-    if (!(fs::exists(argv[1]))) {
-        std::cout << "IMAGES' DIRECTORY NOT FOUND!" << std::endl;
-
-        return -1;
-    }
 
     for (auto& path : fs::directory_iterator(argv[1])) {
         std::string fname = path.path().string().substr(path.path().string().find_last_of('/') + 1);

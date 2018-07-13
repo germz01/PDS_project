@@ -8,10 +8,10 @@
 #include <functional>
 #include <iostream>
 #include <mutex>
-#include <queue>
 #include <string>
 #include <thread>
 #include <typeinfo>
+#include <vector>
 
 using namespace cimg_library;
 using namespace ff;
@@ -21,35 +21,81 @@ namespace fs = std::experimental::filesystem;
 #define W 1024
 #define H 768
 
-std::mutex IMAGES_MUTEX;
+
 std::atomic_int PROCESSED_IMAGES = 0;
-double OVERHEAD_TIME = 0.0;
+int REMAINING_IMAGES = 0;
+std::mutex IMAGES_MUTEX;
 
-void apply_watermark(std::queue<std::string>& images, CImg<unsigned char>& watermark, int workload, \
+void apply_watermark(std::vector<std::string>& images, CImg<unsigned char>& watermark, int start, int end, \
                      std::string output_dir) {
-    std::queue<std::string> to_process;
-    int counter = 0;
-    bool stop = false;
-    CImg<unsigned char> img;
+    ParallelFor pf;
 
-    while(!stop) {
-        IMAGES_MUTEX.lock();
-        auto ot_start = std::chrono::high_resolution_clock::now();
-        while(counter < workload) {
-            if (images.empty()) {
-                counter = workload;
-                stop = true;
-            } else {
-                to_process.push(images.front());
-                images.pop();
-                counter += 1;
+    pf.parallel_for(start, end, [&images, &watermark, output_dir](int i) {
+        CImg<unsigned char> img;
+        img.assign(images[i].c_str());
+
+        if (!(img.width() != 1024 || img.height() != 768)) {
+            cimg_forXY(watermark, x, y) {
+                int R = (int)watermark(x, y, 0, 0);
+
+                if (R != 255) {
+                    img(x, y, 0, 0) = 0;
+                    img(x, y, 0, 1) = 0;
+                    img(x, y, 0, 2) = 0;
+                }
             }
+
+            std::string fname = images[i].substr(images[i].find_last_of('/') + 1);
+
+            try {
+                img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
+            } catch (CImgIOException e) {
+                img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
+            }
+
+            PROCESSED_IMAGES += 1;
         }
-        auto ot_end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::ratio<1>> ot_time = ot_end - ot_start;
-        OVERHEAD_TIME += ot_time.count();
-        IMAGES_MUTEX.unlock();
+        img.clear();
+    });
+
+    while (true) {
+        IMAGES_MUTEX.lock();
+        if (REMAINING_IMAGES == 0) {
+            IMAGES_MUTEX.unlock();
+            break;
+        } else {
+            int idx = images.size() - REMAINING_IMAGES;
+            REMAINING_IMAGES -= 1;
+            IMAGES_MUTEX.unlock();
+
+            img.assign(images[idx].c_str());
+
+            if (!(img.width() != 1024 || img.height() != 768)) {
+                cimg_forXY(watermark, x, y) {
+                    int R = (int)watermark(x, y, 0, 0);
+
+                    if (R != 255) {
+                        img(x, y, 0, 0) = 0;
+                        img(x, y, 0, 1) = 0;
+                        img(x, y, 0, 2) = 0;
+                    }
+            }
+
+                std::string fname = images[idx].substr(images[idx].find_last_of('/') + 1);
+
+                try {
+                    img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
+                } catch (CImgIOException e) {
+                    img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
+                }
+
+                PROCESSED_IMAGES += 1;
+            }
+            img.clear();
+        }
     }
+
+    return;
 }
 
 int main(int argc, char const *argv[]) {
@@ -62,13 +108,13 @@ int main(int argc, char const *argv[]) {
     assert(par_degree <= IMG_NUM);
 
     CImg<unsigned char> watermark(argv[2]);
-    std::queue<std::string> images;
+    std::vector<std::string> images;
 
     for (auto& path : fs::directory_iterator(argv[1])) {
         std::string fname = path.path().string().substr(path.path().string().find_last_of('/') + 1);
 
         if (fname != ".DS_Store") {
-            images.push(path.path().string());
+            images.push_back(path.path().string());
         }
     }
 
@@ -77,11 +123,16 @@ int main(int argc, char const *argv[]) {
     }
 
     int workload = (int)images.size() / par_degree;
+    REMAINING_IMAGES = images.size() - (workload * par_degree);
+
+    int start = 0, end = (start + workload) - 1;
     std::thread workers[par_degree];
 
     for (int i = 0; i < par_degree; i++) {
-        workers[i] = std::thread(apply_watermark, std::ref(images), std::ref(watermark), workload, \
+        workers[i] = std::thread(apply_watermark, std::ref(images), std::ref(watermark), start, end, \
                                  (std::string)argv[4]);
+        start = end + 1;
+        end = (start + workload) - 1;
     }
 
     for (int i = 0; i < par_degree; i++) {
@@ -92,7 +143,10 @@ int main(int argc, char const *argv[]) {
     std::chrono::duration<double, std::ratio<1>> completion_time = completion_time_end - \
                                                                    completion_time_start;
 
+    std::cout << "\nPARALLELISM DEGREE: " << par_degree << std::endl;
     std::cout << "COMPLETION TIME: " << completion_time.count() << " SECONDS" << std::endl;
+    // std::cout << "TOTAL OVERHEAD TIME: " << OVERHEAD_TIME << " SECONDS" << std::endl;
+    std::cout << "PROCESSED IMAGES: " << PROCESSED_IMAGES << std::endl;
 
     return 0;
 }

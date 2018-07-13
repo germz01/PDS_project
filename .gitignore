@@ -21,6 +21,6 @@ report/chaps/1/1.fls
 report/chaps/1/1.log
 sources/main
 sources/main.dSYM/
-sources/source_ff/main
-sources/source_ff/main.dSYM/
-sources/source_ff/fastflow
+sources/sources_ff/main
+sources/sources_ff/main.dSYM/
+sources/sources_ff/fastflow

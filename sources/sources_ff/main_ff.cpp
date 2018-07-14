@@ -4,7 +4,9 @@
 #include "../CImg.h"
 #include <cstdlib>
 #include <experimental/filesystem>
+#include <ff/farm.hpp>
 #include <ff/parallel_for.hpp>
+#include <ff/pipeline.hpp>
 #include <functional>
 #include <iostream>
 #include <mutex>
@@ -21,6 +23,10 @@ namespace fs = std::experimental::filesystem;
 #define W 1024
 #define H 768
 
+typedef struct delimiter_t {
+    int start;
+    int end;
+} delimiter;
 
 std::atomic_int PROCESSED_IMAGES = 0;
 int REMAINING_IMAGES = 0;
@@ -30,7 +36,7 @@ void apply_watermark(std::vector<std::string>& images, CImg<unsigned char>& wate
                      std::string output_dir) {
     ParallelFor pf;
 
-    pf.parallel_for(start, end, [&images, &watermark, output_dir](int i) {
+    pf.parallel_for(start, end + 1, [&images, &watermark, output_dir](int i) {
         CImg<unsigned char> img;
         img.assign(images[i].c_str());
 
@@ -58,6 +64,8 @@ void apply_watermark(std::vector<std::string>& images, CImg<unsigned char>& wate
         img.clear();
     });
 
+    CImg<unsigned char> img;
+
     while (true) {
         IMAGES_MUTEX.lock();
         if (REMAINING_IMAGES == 0) {
@@ -79,7 +87,7 @@ void apply_watermark(std::vector<std::string>& images, CImg<unsigned char>& wate
                         img(x, y, 0, 1) = 0;
                         img(x, y, 0, 2) = 0;
                     }
-            }
+                }
 
                 std::string fname = images[idx].substr(images[idx].find_last_of('/') + 1);
 
@@ -94,9 +102,55 @@ void apply_watermark(std::vector<std::string>& images, CImg<unsigned char>& wate
             img.clear();
         }
     }
-
     return;
 }
+
+class Emitter: public ff_node {
+    public:
+        Emitter(int img_size, int par_degree, int workload): img_size(img_size), par_degree(par_degree), \
+        workload(workload) {
+            start = 0;
+            end = (start + workload) - 1;
+        }
+
+        void * svc(void *) {
+            delimiter * t = (delimiter *) calloc(1, sizeof(delimiter));
+
+            if (par_degree > 0) {
+                t -> start = start;
+                t -> end = end;
+
+                start = end + 1;
+                end = (start + workload) - 1;
+                par_degree -= 1;
+
+                return t;
+            } else {
+                return NULL;
+            }
+        }
+    private:
+        int img_size;
+        int par_degree;
+        int workload;
+        int start;
+        int end;
+};
+
+class Worker: public ff_node {
+    public:
+        Worker(std::vector<std::string>& images, CImg<unsigned char>& watermark, std::string output_dir): \
+        images(images), watermark(watermark), output_dir(output_dir) {}
+
+        void * svc(void * task) {
+            delimiter * t = (delimiter *) task;
+            return NULL;
+        }
+    private:
+        std::vector<std::string> images;
+        CImg<unsigned char> watermark;
+        std::string output_dir;
+};
 
 int main(int argc, char const *argv[]) {
     auto completion_time_start = std::chrono::high_resolution_clock::now();
@@ -105,7 +159,7 @@ int main(int argc, char const *argv[]) {
 
     int par_degree = std::atoi(argv[3]);
 
-    assert(par_degree <= IMG_NUM);
+    assert(par_degree > 1 && par_degree <= IMG_NUM);
 
     CImg<unsigned char> watermark(argv[2]);
     std::vector<std::string> images;
@@ -125,18 +179,21 @@ int main(int argc, char const *argv[]) {
     int workload = (int)images.size() / par_degree;
     REMAINING_IMAGES = images.size() - (workload * par_degree);
 
-    int start = 0, end = (start + workload) - 1;
-    std::thread workers[par_degree];
+    ff_farm<> farm;
+
+    Emitter e(images.size(), par_degree, workload);
+    farm.add_emitter(&e);
+
+    std::vector<ff_node *> workers;
 
     for (int i = 0; i < par_degree; i++) {
-        workers[i] = std::thread(apply_watermark, std::ref(images), std::ref(watermark), start, end, \
-                                 (std::string)argv[4]);
-        start = end + 1;
-        end = (start + workload) - 1;
+        workers.push_back(new Worker(std::ref(images), std::ref(watermark), (std::string)argv[4]));
     }
 
-    for (int i = 0; i < par_degree; i++) {
-        workers[i].join();
+    farm.add_workers(workers);
+
+    if (farm.run_and_wait_end() < 0) {
+        return -1;
     }
 
     auto completion_time_end = std::chrono::high_resolution_clock::now();

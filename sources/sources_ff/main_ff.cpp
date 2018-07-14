@@ -6,7 +6,6 @@
 #include <experimental/filesystem>
 #include <ff/farm.hpp>
 #include <ff/parallel_for.hpp>
-#include <ff/pipeline.hpp>
 #include <functional>
 #include <iostream>
 #include <mutex>
@@ -32,79 +31,6 @@ std::atomic_int PROCESSED_IMAGES = 0;
 int REMAINING_IMAGES = 0;
 std::mutex IMAGES_MUTEX;
 
-void apply_watermark(std::vector<std::string>& images, CImg<unsigned char>& watermark, int start, int end, \
-                     std::string output_dir) {
-    ParallelFor pf;
-
-    pf.parallel_for(start, end + 1, [&images, &watermark, output_dir](int i) {
-        CImg<unsigned char> img;
-        img.assign(images[i].c_str());
-
-        if (!(img.width() != 1024 || img.height() != 768)) {
-            cimg_forXY(watermark, x, y) {
-                int R = (int)watermark(x, y, 0, 0);
-
-                if (R != 255) {
-                    img(x, y, 0, 0) = 0;
-                    img(x, y, 0, 1) = 0;
-                    img(x, y, 0, 2) = 0;
-                }
-            }
-
-            std::string fname = images[i].substr(images[i].find_last_of('/') + 1);
-
-            try {
-                img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
-            } catch (CImgIOException e) {
-                img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
-            }
-
-            PROCESSED_IMAGES += 1;
-        }
-        img.clear();
-    });
-
-    CImg<unsigned char> img;
-
-    while (true) {
-        IMAGES_MUTEX.lock();
-        if (REMAINING_IMAGES == 0) {
-            IMAGES_MUTEX.unlock();
-            break;
-        } else {
-            int idx = images.size() - REMAINING_IMAGES;
-            REMAINING_IMAGES -= 1;
-            IMAGES_MUTEX.unlock();
-
-            img.assign(images[idx].c_str());
-
-            if (!(img.width() != 1024 || img.height() != 768)) {
-                cimg_forXY(watermark, x, y) {
-                    int R = (int)watermark(x, y, 0, 0);
-
-                    if (R != 255) {
-                        img(x, y, 0, 0) = 0;
-                        img(x, y, 0, 1) = 0;
-                        img(x, y, 0, 2) = 0;
-                    }
-                }
-
-                std::string fname = images[idx].substr(images[idx].find_last_of('/') + 1);
-
-                try {
-                    img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
-                } catch (CImgIOException e) {
-                    img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
-                }
-
-                PROCESSED_IMAGES += 1;
-            }
-            img.clear();
-        }
-    }
-    return;
-}
-
 class Emitter: public ff_node {
     public:
         Emitter(int img_size, int par_degree, int workload): img_size(img_size), par_degree(par_degree), \
@@ -129,6 +55,7 @@ class Emitter: public ff_node {
                 return NULL;
             }
         }
+
     private:
         int img_size;
         int par_degree;
@@ -144,8 +71,75 @@ class Worker: public ff_node {
 
         void * svc(void * task) {
             delimiter * t = (delimiter *) task;
+
+            ParallelFor pf;
+            pf.parallel_for(t -> start, (t -> end) + 1, [=](int i) {
+                CImg<unsigned char> img;
+                img.assign(images[i].c_str());
+
+                if (!(img.width() != 1024 || img.height() != 768)) {
+                    cimg_forXY(watermark, x, y) {
+                        int R = (int)watermark(x, y, 0, 0);
+
+                        if (R != 255) {
+                            img(x, y, 0, 0) = 0;
+                            img(x, y, 0, 1) = 0;
+                            img(x, y, 0, 2) = 0;
+                        }
+                    }
+
+                    std::string fname = images[i].substr(images[i].find_last_of('/') + 1);
+
+                    try {
+                        img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
+                    } catch (CImgIOException e) {
+                        img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
+                    }
+                    PROCESSED_IMAGES += 1;
+                }
+                img.clear();
+            });
+
+            CImg<unsigned char> img;
+
+            while (true) {
+                IMAGES_MUTEX.lock();
+                if (REMAINING_IMAGES == 0) {
+                    IMAGES_MUTEX.unlock();
+                    break;
+                } else {
+                    int idx = images.size() - REMAINING_IMAGES;
+                    REMAINING_IMAGES -= 1;
+                    IMAGES_MUTEX.unlock();
+
+                    img.assign(images[idx].c_str());
+
+                    if (!(img.width() != 1024 || img.height() != 768)) {
+                        cimg_forXY(watermark, x, y) {
+                            int R = (int)watermark(x, y, 0, 0);
+
+                            if (R != 255) {
+                                img(x, y, 0, 0) = 0;
+                                img(x, y, 0, 1) = 0;
+                                img(x, y, 0, 2) = 0;
+                            }
+                        }
+
+                        std::string fname = images[idx].substr(images[idx].find_last_of('/') + 1);
+
+                        try {
+                            img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
+                        } catch (CImgIOException e) {
+                            img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
+                        }
+                        PROCESSED_IMAGES += 1;
+                    }
+                    img.clear();
+                }
+            }
             return NULL;
         }
+
     private:
         std::vector<std::string> images;
         CImg<unsigned char> watermark;

@@ -33,6 +33,8 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
     writer.writeheader()
 
     for pd in range(start, args['loop'] + 1):
+        print 'TESTING FOR PARALLELISM DEGREE ' + str(pd)
+
         cmd = list()
 
         if args['executable'] == 'standard':

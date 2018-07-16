@@ -9,6 +9,7 @@
 #include <functional>
 #include <iostream>
 #include <mutex>
+#include <numeric>
 #include <string>
 #include <thread>
 #include <typeinfo>
@@ -30,6 +31,8 @@ typedef struct delimiter_t {
 std::atomic_int PROCESSED_IMAGES = 0;
 int REMAINING_IMAGES = 0;
 std::mutex IMAGES_MUTEX;
+
+std::vector<double> MEAN_LATENCIES;
 
 class Emitter: public ff_node {
     public:
@@ -71,6 +74,8 @@ class Worker: public ff_node {
 
         void * svc(void * task) {
             delimiter * t = (delimiter *) task;
+
+            auto latency_time_start = std::chrono::high_resolution_clock::now();
 
             ParallelFor pf;
             pf.parallel_for(t -> start, (t -> end) + 1, [=](int i) {
@@ -137,6 +142,12 @@ class Worker: public ff_node {
                     img.clear();
                 }
             }
+
+            auto latency_time_end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::ratio<1>> latency_time = latency_time_end - \
+                                                                        latency_time_start;
+            MEAN_LATENCIES.push_back(latency_time.count());
+
             return NULL;
         }
 
@@ -196,7 +207,9 @@ int main(int argc, char const *argv[]) {
 
     std::cout << "\nPARALLELISM DEGREE: " << par_degree << std::endl;
     std::cout << "COMPLETION TIME: " << completion_time.count() << " SECONDS" << std::endl;
-    // std::cout << "TOTAL OVERHEAD TIME: " << OVERHEAD_TIME << " SECONDS" << std::endl;
+    std::cout << "AVERAGE LATENCY: " << \
+              (std::accumulate(MEAN_LATENCIES.begin(), MEAN_LATENCIES.end(), 0.0)/MEAN_LATENCIES.size()) \
+              << " SECONDS" << std::endl;
     std::cout << "PROCESSED IMAGES: " << PROCESSED_IMAGES << std::endl;
 
     return 0;

@@ -146,6 +146,7 @@ class Worker: public ff_node {
             auto latency_time_end = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double, std::ratio<1>> latency_time = latency_time_end - \
                                                                         latency_time_start;
+            std::cout << "Latency: " << latency_time.count() << std::endl;
             MEAN_LATENCIES.push_back(latency_time.count());
 
             return NULL;

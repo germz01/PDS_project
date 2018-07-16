@@ -7,6 +7,7 @@
 #include <functional>
 #include <iostream>
 #include <mutex>
+#include <numeric>
 #include <string>
 #include <thread>
 #include <typeinfo>
@@ -19,16 +20,19 @@ namespace fs = std::experimental::filesystem;
 #define W 1024
 #define H 768
 
-
 std::atomic_int PROCESSED_IMAGES = 0;
 int REMAINING_IMAGES = 0;
 std::mutex IMAGES_MUTEX;
 
+std::vector<double> MEAN_LATENCIES;
+
 void apply_watermark(std::vector<std::string>& images, CImg<unsigned char>& watermark, int start, int end, \
                      std::string output_dir) {
+    auto latency_time_start = std::chrono::high_resolution_clock::now();
     CImg<unsigned char> img;
 
     for (int i = start; i <= end; i++) {
+
         img.assign(images[i].c_str());
 
         if (!(img.width() != 1024 || img.height() != 768)) {
@@ -91,7 +95,10 @@ void apply_watermark(std::vector<std::string>& images, CImg<unsigned char>& wate
             img.clear();
         }
     }
-
+    auto latency_time_end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::ratio<1>> latency_time = latency_time_end - \
+                                                                latency_time_start;
+    MEAN_LATENCIES.push_back(latency_time.count());
     return;
 }
 
@@ -120,6 +127,7 @@ int main(int argc, char const *argv[]) {
     }
 
     if (par_degree == 1) {
+        auto latency_time_start = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < images.size(); i++){
             CImg<unsigned char> img(images[i].c_str());
 
@@ -145,6 +153,10 @@ int main(int argc, char const *argv[]) {
                 PROCESSED_IMAGES += 1;
             }
         }
+        auto latency_time_end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::ratio<1>> latency_time = latency_time_end - \
+                                                                    latency_time_start;
+        MEAN_LATENCIES.push_back(latency_time.count());
     } else {
         int workload = (int)images.size() / par_degree;
         REMAINING_IMAGES = images.size() - (workload * par_degree);
@@ -170,7 +182,9 @@ int main(int argc, char const *argv[]) {
 
     std::cout << "\nPARALLELISM DEGREE: " << par_degree << std::endl;
     std::cout << "COMPLETION TIME: " << completion_time.count() << " SECONDS" << std::endl;
-    // std::cout << "TOTAL OVERHEAD TIME: " << OVERHEAD_TIME << " SECONDS" << std::endl;
+    std::cout << "AVERAGE LATENCY: " << \
+              (std::accumulate(MEAN_LATENCIES.begin(), MEAN_LATENCIES.end(), 0.0)/MEAN_LATENCIES.size()) \
+              << " SECONDS" << std::endl;
     std::cout << "PROCESSED IMAGES: " << PROCESSED_IMAGES << std::endl;
 
     return 0;

@@ -1,3 +1,4 @@
+from __future__ import division
 import argparse
 import csv
 import os
@@ -6,6 +7,7 @@ import subprocess
 standard = '../'
 fastflow = '../sources_ff'
 start = 1
+t_par_1 = 0.0
 
 parser = argparse.ArgumentParser(description="This script collects data" +
                                  " about the execution time of the main " +
@@ -27,7 +29,8 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
         os.chdir(fastflow)
         start += 1
 
-    fieldnames = ['PARALLELISM DEGREE', 'COMPLETION TIME']
+    fieldnames = ['PARALLELISM DEGREE', 'COMPLETION TIME', 'AVERAGE LATENCY',
+                  'SCALABILITY']
 
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
@@ -39,10 +42,10 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
 
         if args['executable'] == 'standard':
             cmd = ['./main', '../imgs', '../watermark.jpg', str(pd),
-            '../output_dir']
+                   '../output_dir']
         else:
             cmd = ['./main', '../../imgs', '../../watermark.jpg', str(pd),
-            '../../output_dir']
+                   '../../output_dir']
 
         out = subprocess.check_output(cmd)
         out = out.split('\n')
@@ -50,6 +53,14 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
 
         pd = out[0].replace(' ', '').split(':')[1]
         ct = out[1].replace(' SECONDS', '').replace(' ', '').split(':')[1]
-        # ot = out[2].replace(' SECONDS', '').replace(' ', '').split(':')[1]
+        al = out[2].replace(' SECONDS', '').replace(' ', '').split(':')[1]
 
-        writer.writerow({'PARALLELISM DEGREE': pd, 'COMPLETION TIME': ct})
+        if pd == '1':
+            t_par_1 = float(ct)
+
+        scl = round(t_par_1 / float(ct), 2)
+
+        writer.writerow({'PARALLELISM DEGREE': pd,
+                         'COMPLETION TIME': round(float(ct), 2),
+                         'AVERAGE LATENCY': round(float(al), 2),
+                         'SCALABILITY': scl})

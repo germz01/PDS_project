@@ -102,7 +102,7 @@ class Worker: public ff_node {
 
             CImg<unsigned char> img;
 
-            while (true) {
+            /*while (true) {
                 IMAGES_MUTEX.lock();
                 if (REMAINING_IMAGES == 0) {
                     IMAGES_MUTEX.unlock();
@@ -136,7 +136,7 @@ class Worker: public ff_node {
                     }
                     img.clear();
                 }
-            }
+            }*/
             return NULL;
         }
 

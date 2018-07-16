@@ -55,6 +55,8 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
         ct = out[1].replace(' SECONDS', '').replace(' ', '').split(':')[1]
         al = out[2].replace(' SECONDS', '').replace(' ', '').split(':')[1]
 
+        print 'average latency: ' + al
+
         if pd == '1' or (pd == '2' and args['executable'] == 'fastflow'):
             t_par_1 = float(ct)
 

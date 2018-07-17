@@ -9,6 +9,9 @@
 \usepackage{fontspec,todonotes,enumitem,comment,capt-of,amsmath,booktabs}
 \usepackage[colorlinks]{hyperref}
 \usepackage[font=scriptsize]{caption}
+\usepackage[Sonny]{fncychap}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
 
 \renewcommand{\familydefault}{\sfdefault}
 
@@ -22,12 +25,12 @@
     urlcolor= black
 }
 
+
 \begin{document}
     \input{chaps/titlepage/titlepage}
     \pagenumbering{Roman}
     \tableofcontents
     \input{chaps/1/1}
-    \pagenumbering{arabic}
     \input{chaps/2/2}
     \input{chaps/3/3}
     \input{chaps/4/4}

@@ -1,5 +1,108 @@
 \chapter{Parallel architecture design} % (fold)
 \label{cha:parallel_architecture_design}
-    In this first chapter of the report I'll describe the details regarding the parallel architecture design of
-    the Image "watermarking" project.
+    \pagenumbering{arabic}
+    In this first chapter I'll describe the details regarding the \textbf{parallel architecture design} of
+    the Image \textit{watermarking} project. In order to follow a certain criterion in the decisions
+    for designing a parallel application, I've followed Figure $6.2$ of
+    \href{https://classroom.google.com/c/MTExMTY4MTg1Mzha/t/MTIyMDY0NDA0NjZa}
+    {\textit{Distributed systems: paradigms and models}}, and, in general, the concepts of chapter $6$. In
+    Figure \ref{fig:parallel_architecture} you can see a representation of the parallel architecture that will
+    be described in the following sections.
+
+    \section{Task definition} % (fold)
+    \label{sec:task_definition}
+        One of the most important choices to be taken during the design of a parallel application consist in the
+        definition of what has to be considered as the smaller unit of work for the processes involved in the
+        computation, namely, the definition of what a \textbf{task} is. For the Image watermarking project, I've
+        chosen to consider each image that has to be processed as a distinct task. This decision, as expected, is
+        meaningful for the design of all the aspects that will be described in the next sections.
+    % section task_definition (end)
+
+    \section{Finding concurrency design space} % (fold)
+    \label{sec:finding_concurrency_design_space}
+        Following the order given by Figure $6.2$, and keeping in mind what a task is in the context of the
+        watermarking project, the next step, in the \textit{finding concurrency} design phase, consist in
+        selecting the \textbf{decomposition} and \textbf{dependency analysis} pattern to apply in the parallel
+        application. For the former, I've chosen the \textit{task decomposition} pattern, remaining coherent with
+        the task definition, and for the latter I've chosen the \textit{data sharing} pattern. The task
+        decomposition pattern models the division of a complex application in a set of tasks, which in this case
+        are represented by the images, while the data sharing pattern models the accesses to a shared data
+        structure, which in this case is represented by a standard vector containing the absolute paths to the
+        images (that are contained in a directory which is given in input by the user). The vector is accessed
+        concurrently by the processes, and each process works on a different portion of the vector.
+    % section finding_concurrency_design_space (end)
+
+    \section{Algorithm structure design space} % (fold)
+    \label{sec:algorithm_structure_design_space}
+        In order to figure out a parallel program structure closer to an actual parallel program, what is been
+        decided in sections \ref{sec:task_definition} and \ref{sec:finding_concurrency_design_space} is refined
+        in the \textit{algorithm structure} design space. I've decided to organize the parallel algorithm
+        \textit{by task}, and, in particular, using the \textit{task parallelism} pattern, giving to every
+        process that works on the vector containing the images an egual number of tasks, which, quite trivially,
+        is obtained by the formula
+
+        \begin{equation*}
+             \mathit{workload} = \frac{\mathit{\# images}}{parallelism \ degree}.
+        \end{equation*}
+
+        If the number of images to be processed is not divisible by the parallelism degree, the remaining images
+        are processed, one by one, by the processes, which this time access the vector using a mutex and extract
+        the image's path in a "FIFO-fashion".
+    % section algorithm_structure_design_space (end)
+
+    \section{Supporting structures design space} % (fold)
+    \label{sec:supporting_structures_design_space}
+        In the \textit{supporting structures} design space the structures, that is, the
+        patterns, suitable to support the implementation of the algorithms planned in section
+        \ref{sec:algorithm_structure_design_space} are investigated. Among the two available choices,
+        the \textit{data structures} and the \textit{program structures}, I've chosen the latter, and, in
+        particular, the well known \textit{Master/Worker} pattern, which models the concurrent execution of a
+        \textit{bag of tasks} on a collection of identical workers. In the context of the watermarking project,
+        the master is represented by the main process, which defines the workload to be assigned to each worker
+        and performs all the necessary computations in order to assign the correct set of indexes to make the
+        workers safely access the vector in a concurrent way, and the workers are represented by a set of
+        threads that all execute the same function, which accesses the image vector and, for every path that is
+        assigned by the master, apply the watermark (given in input by the user). As outlined in section
+        \ref{sec:algorithm_structure_design_space}, every worker try to process the remaining images in a
+        FIFO-fashion.
+    % section supporting_structures_design_space (end)
+
+    \section{Implementation mechanisms design space} % (fold)
+    \label{sec:implementation_mechanisms_design_space}
+        In this final section I describe the design space which models the mechanisms needed to support the
+        parallel computing abstractions typical of parallel programming, that is, the \textit{implementation
+        mechanisms} design space. I've chosen to use the \textit{synchronization} pattern, since the use of locks
+        and mutexes is necessary to guarantee the sequential access to the image vector during the final phase
+        of the function used to apply the watermark.
+
+        \begin{figure}[t]
+        \centering
+            \begin{tikzpicture}
+                \begin{scope}[every node/.style={circle,thick,draw}]
+                    \node (A) at (0,0) {master};
+                    \node (C) at (3,2) {worker};
+                    \node (D) at (3,-2) {worker};
+                \end{scope}
+
+                \node[rectangle,thick,draw] (E) at (7,0) {\rotatebox{90}{image vector}};
+                \node[rectangle,thick,draw] (F) at (-3,0) {\rotatebox{90}{watermark}};
+                \node[rectangle,thick,draw] (G) at (9,0) {\rotatebox{90}{output directory}};
+
+                \begin{scope}[>={Stealth[black]},every node/.style={fill=white,circle},
+                every edge/.style={draw=black,very thick}]
+                    \path [->] (A) edge node {task} (C);
+                    \path [->] (A) edge node {task} (D);
+                    \path [->] (A) edge node {retrieve} (F);
+                    \path [->] (C) edge node {access} (E);
+                    \path [->] (C) edge[bend left=30] node {save} (G);
+                    \path [->] (D) edge node {access} (E);
+                    \path [->] (D) edge[bend right=30] node {save} (G);
+                \end{scope}
+        \end{tikzpicture}
+        \caption{Representation of the parallel architecture described in this chapter.}
+        \label{fig:parallel_architecture}
+        \end{figure}
+
+    % section implementation_mechanisms_design_space (end)
+
 % chapter parallel_architecture_design (end)

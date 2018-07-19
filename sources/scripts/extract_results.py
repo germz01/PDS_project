@@ -7,8 +7,9 @@ import subprocess
 
 standard = '../'
 fastflow = '../sources_ff'
-start = 1
+start = 0
 t_par_1 = 0.0
+t_seq = 0.0
 
 parser = argparse.ArgumentParser(description="This script collects data" +
                                  " about the execution time of the main " +
@@ -32,7 +33,8 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
 
     fieldnames = ['PARALLELISM DEGREE', 'COMPLETION TIME', 'AVERAGE LATENCY',
                   'AVERAGE LOADING TIME', 'AVERAGE SAVING TIME',
-                  'AVERAGE CREATION TIME', 'SPEEDUP', 'EFFICIENCY']
+                  'AVERAGE CREATION TIME', 'SPEEDUP', 'SCALABILITY',
+                  'EFFICIENCY']
 
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
@@ -65,15 +67,19 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
         row['avg_save'] = float(out[4].replace(' SECONDS', '').
                                 replace(' ', '').split(':')[1])
 
-        if pd != 1:
-            row['avg_creation'] = float(out[5].replace(' SECONDS', '').
-                                        replace(' ', '').split(':')[1])
-
-        if pd == 1 or (pd == 2 and args['executable'] == 'fastflow'):
+        if pd == 0:
+            t_seq = row['ct']
+        elif pd == 1:
             t_par_1 = row['ct']
 
-        row['speedup'] = t_par_1 / row['ct']
-        row['efficiency'] = row['speedup'] / row['pd']
+        if pd != 0:
+            row['avg_creation'] = float(out[5].replace(' SECONDS', '').
+                                        replace(' ', '').split(':')[1])
+            row['scalability'] = t_par_1 / row['ct']
+
+        if args['executable'] != 'fastflow' and pd != 0:
+            row['speedup'] = t_seq / row['ct']
+            row['efficiency'] = row['speedup'] / row['pd']
 
         writer.writerow({'PARALLELISM DEGREE': row['pd'],
                          'COMPLETION TIME': row['ct'],
@@ -82,4 +88,5 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
                          'AVERAGE SAVING TIME': row['avg_save'],
                          'AVERAGE CREATION TIME': row['avg_creation'],
                          'SPEEDUP': row['speedup'],
+                         'SCALABILITY': row['scalability'],
                          'EFFICIENCY': row['efficiency']})

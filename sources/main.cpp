@@ -156,7 +156,7 @@ int main(int argc, char const *argv[]) {
         fs::create_directory((std::string)argv[4]);
     }
 
-    if (par_degree == 1) {
+    if (par_degree == 0) {
         auto latency_time_start = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < images.size(); i++){
             auto loading_time_start = std::chrono::high_resolution_clock::now();

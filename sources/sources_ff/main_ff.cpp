@@ -207,7 +207,7 @@ int main(int argc, char const *argv[]) {
 
     int par_degree = std::atoi(argv[3]);
 
-    assert(par_degree > 1 && par_degree <= IMG_NUM);
+    assert(par_degree >= 1 && par_degree <= IMG_NUM);
 
     CImg<unsigned char> watermark(argv[2]);
     std::vector<std::string> images;

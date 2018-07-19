@@ -32,7 +32,13 @@ std::atomic_int PROCESSED_IMAGES = 0;
 int REMAINING_IMAGES = 0;
 std::mutex IMAGES_MUTEX, LOADING_MUTEX, SAVING_MUTEX;
 
-std::vector<double> MEAN_LATENCIES, MEAN_LOADING_TIME, MEAN_SAVING_TIME;
+std::vector<double> MEAN_LATENCIES, MEAN_LOADING_TIME, MEAN_SAVING_TIME, MEAN_CREATION_TIME;
+
+double mean(std::vector<double>& vect) {
+ double mean = std::accumulate(vect.begin(), vect.end(), 0.0)/vect.size();
+
+ return mean;
+}
 
 class Emitter: public ff_node {
     public:
@@ -229,7 +235,12 @@ int main(int argc, char const *argv[]) {
     std::vector<ff_node *> workers;
 
     for (int i = 0; i < par_degree; i++) {
+        auto creation_time_start = std::chrono::high_resolution_clock::now();
         workers.push_back(new Worker(std::ref(images), std::ref(watermark), (std::string)argv[4]));
+        auto creation_time_end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::ratio<1>> creation_time = creation_time_end - \
+                                                                     creation_time_start;
+        MEAN_CREATION_TIME.push_back(creation_time.count());
     }
 
     farm.add_workers(workers);
@@ -244,15 +255,10 @@ int main(int argc, char const *argv[]) {
 
     std::cout << "\nPARALLELISM DEGREE: " << par_degree << std::endl;
     std::cout << "COMPLETION TIME: " << completion_time.count() << " SECONDS" << std::endl;
-    std::cout << "AVERAGE LATENCY: " << \
-              (std::accumulate(MEAN_LATENCIES.begin(), MEAN_LATENCIES.end(), 0.0)/MEAN_LATENCIES.size()) \
-              << " SECONDS" << std::endl;
-    std::cout << "AVERAGE LOADING TIME: " << \
-              (std::accumulate(MEAN_LOADING_TIME.begin(), MEAN_LOADING_TIME.end(), 0.0)/\
-               MEAN_LOADING_TIME.size()) << " SECONDS" << std::endl;
-    std::cout << "AVERAGE SAVING TIME: " << \
-              (std::accumulate(MEAN_SAVING_TIME.begin(), MEAN_SAVING_TIME.end(), 0.0)/\
-               MEAN_SAVING_TIME.size()) << " SECONDS" << std::endl;
+    std::cout << "MEAN LATENCY: " << mean(std::ref(MEAN_LATENCIES)) << " SECONDS" << std::endl;
+    std::cout << "MEAN LOADING TIME: " << mean(std::ref(MEAN_LOADING_TIME)) << " SECONDS" << std::endl;
+    std::cout << "MEAN SAVING TIME: " << mean(std::ref(MEAN_SAVING_TIME)) << " SECONDS" << std::endl;
+    std::cout << "MEAN CREATION TIME: " << mean(std::ref(MEAN_CREATION_TIME)) << " SECONDS" << std::endl;
     std::cout << "PROCESSED IMAGES: " << PROCESSED_IMAGES << std::endl;
 
     return 0;

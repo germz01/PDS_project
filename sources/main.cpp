@@ -26,6 +26,12 @@ std::mutex IMAGES_MUTEX, LOADING_MUTEX, SAVING_MUTEX;
 
 std::vector<double> MEAN_LATENCIES, MEAN_LOADING_TIME, MEAN_SAVING_TIME, MEAN_CREATION_TIME;
 
+double mean(std::vector<double>& vect) {
+ double mean = std::accumulate(vect.begin(), vect.end(), 0.0)/vect.size();
+
+ return mean;
+}
+
 void apply_watermark(std::vector<std::string>& images, CImg<unsigned char>& watermark, int start, int end, \
                      std::string output_dir) {
     auto latency_time_start = std::chrono::high_resolution_clock::now();
@@ -221,18 +227,10 @@ int main(int argc, char const *argv[]) {
 
     std::cout << "\nPARALLELISM DEGREE: " << par_degree << std::endl;
     std::cout << "COMPLETION TIME: " << completion_time.count() << " SECONDS" << std::endl;
-    std::cout << "AVERAGE LATENCY: " << \
-              (std::accumulate(MEAN_LATENCIES.begin(), MEAN_LATENCIES.end(), 0.0)/MEAN_LATENCIES.size()) \
-              << " SECONDS" << std::endl;
-    std::cout << "AVERAGE LOADING TIME: " << \
-              (std::accumulate(MEAN_LOADING_TIME.begin(), MEAN_LOADING_TIME.end(), 0.0)/\
-               MEAN_LOADING_TIME.size()) << " SECONDS" << std::endl;
-    std::cout << "AVERAGE SAVING TIME: " << \
-              (std::accumulate(MEAN_SAVING_TIME.begin(), MEAN_SAVING_TIME.end(), 0.0)/\
-               MEAN_SAVING_TIME.size()) << " SECONDS" << std::endl;
-    std::cout << "AVERAGE CREATION TIME: " << \
-              (std::accumulate(MEAN_CREATION_TIME.begin(), MEAN_CREATION_TIME.end(), 0.0)/\
-               MEAN_CREATION_TIME.size()) << " SECONDS" << std::endl;
+    std::cout << "MEAN LATENCY: " << mean(std::ref(MEAN_LATENCIES)) << " SECONDS" << std::endl;
+    std::cout << "MEAN LOADING TIME: " << mean(std::ref(MEAN_LOADING_TIME)) << " SECONDS" << std::endl;
+    std::cout << "MEAN SAVING TIME: " << mean(std::ref(MEAN_SAVING_TIME)) << " SECONDS" << std::endl;
+    std::cout << "MEAN CREATION TIME: " << mean(std::ref(MEAN_CREATION_TIME)) << " SECONDS" << std::endl;
     std::cout << "PROCESSED IMAGES: " << PROCESSED_IMAGES << std::endl;
 
     return 0;

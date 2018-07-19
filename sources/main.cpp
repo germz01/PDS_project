@@ -22,9 +22,9 @@ namespace fs = std::experimental::filesystem;
 
 std::atomic_int PROCESSED_IMAGES = 0;
 int REMAINING_IMAGES = 0;
-std::mutex IMAGES_MUTEX;
+std::mutex IMAGES_MUTEX, LOADING_MUTEX, SAVING_MUTEX;
 
-std::vector<double> MEAN_LATENCIES;
+std::vector<double> MEAN_LATENCIES, MEAN_LOADING_TIME, MEAN_SAVING_TIME, MEAN_CREATION_TIME;
 
 void apply_watermark(std::vector<std::string>& images, CImg<unsigned char>& watermark, int start, int end, \
                      std::string output_dir) {
@@ -33,7 +33,15 @@ void apply_watermark(std::vector<std::string>& images, CImg<unsigned char>& wate
 
     for (int i = start; i <= end; i++) {
 
+        auto loading_time_start = std::chrono::high_resolution_clock::now();
         img.assign(images[i].c_str());
+        auto loading_time_end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::ratio<1>> loading_time = loading_time_end - \
+                                                                    loading_time_start;
+
+        LOADING_MUTEX.lock();
+        MEAN_LOADING_TIME.push_back(loading_time.count());
+        LOADING_MUTEX.unlock();
 
         if (!(img.width() != 1024 || img.height() != 768)) {
             cimg_forXY(watermark, x, y) {
@@ -48,11 +56,19 @@ void apply_watermark(std::vector<std::string>& images, CImg<unsigned char>& wate
 
             std::string fname = images[i].substr(images[i].find_last_of('/') + 1);
 
-            try {
+            /*try {
                 img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
             } catch (CImgIOException e) {
                 img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
-            }
+            }*/
+            SAVING_MUTEX.lock();
+            auto saving_time_start = std::chrono::high_resolution_clock::now();
+            img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
+            auto saving_time_end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::ratio<1>> saving_time = saving_time_end - \
+                                                                       saving_time_start;
+            MEAN_SAVING_TIME.push_back(saving_time.count());
+            SAVING_MUTEX.unlock();
 
             PROCESSED_IMAGES += 1;
         }
@@ -84,11 +100,19 @@ void apply_watermark(std::vector<std::string>& images, CImg<unsigned char>& wate
 
                 std::string fname = images[idx].substr(images[idx].find_last_of('/') + 1);
 
-                try {
+                /*try {
                     img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
                 } catch (CImgIOException e) {
                     img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
-                }
+                }*/
+                SAVING_MUTEX.lock();
+                auto saving_time_start = std::chrono::high_resolution_clock::now();
+                img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
+                auto saving_time_end = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double, std::ratio<1>> saving_time = saving_time_end - \
+                                                                           saving_time_start;
+                MEAN_SAVING_TIME.push_back(saving_time.count());
+                SAVING_MUTEX.unlock();
 
                 PROCESSED_IMAGES += 1;
             }
@@ -129,7 +153,12 @@ int main(int argc, char const *argv[]) {
     if (par_degree == 1) {
         auto latency_time_start = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < images.size(); i++){
+            auto loading_time_start = std::chrono::high_resolution_clock::now();
             CImg<unsigned char> img(images[i].c_str());
+            auto loading_time_end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::ratio<1>> loading_time = loading_time_end - \
+                                                                        loading_time_start;
+            MEAN_LOADING_TIME.push_back(loading_time.count());
 
             if (!(img.width() != W || img.height() != H)) {
                 cimg_forXY(watermark, x, y) {
@@ -144,11 +173,16 @@ int main(int argc, char const *argv[]) {
 
                 std::string fname = images[i].substr(images[i].find_last_of('/') + 1);
 
+                auto saving_time_start = std::chrono::high_resolution_clock::now();
                 try {
                     img.save_jpeg(((std::string)argv[4] + (std::string)"/" + fname).c_str());
                 } catch (CImgIOException e) {
                     img.save_jpeg(((std::string)argv[4] + (std::string)"/" + fname).c_str());
                 }
+                auto saving_time_end = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double, std::ratio<1>> saving_time = saving_time_end - \
+                                                                           saving_time_start;
+                MEAN_SAVING_TIME.push_back(saving_time.count());
 
                 PROCESSED_IMAGES += 1;
             }
@@ -165,8 +199,13 @@ int main(int argc, char const *argv[]) {
         std::thread workers[par_degree];
 
         for (int i = 0; i < par_degree; i++) {
+            auto creation_time_start = std::chrono::high_resolution_clock::now();
             workers[i] = std::thread(apply_watermark, std::ref(images), std::ref(watermark), start, end, \
                                      (std::string)argv[4]);
+            auto creation_time_end = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::ratio<1>> creation_time = creation_time_end - \
+                                                                         creation_time_start;
+            MEAN_CREATION_TIME.push_back(creation_time.count());
             start = end + 1;
             end = (start + workload) - 1;
         }
@@ -185,6 +224,15 @@ int main(int argc, char const *argv[]) {
     std::cout << "AVERAGE LATENCY: " << \
               (std::accumulate(MEAN_LATENCIES.begin(), MEAN_LATENCIES.end(), 0.0)/MEAN_LATENCIES.size()) \
               << " SECONDS" << std::endl;
+    std::cout << "AVERAGE LOADING TIME: " << \
+              (std::accumulate(MEAN_LOADING_TIME.begin(), MEAN_LOADING_TIME.end(), 0.0)/\
+               MEAN_LOADING_TIME.size()) << " SECONDS" << std::endl;
+    std::cout << "AVERAGE SAVING TIME: " << \
+              (std::accumulate(MEAN_SAVING_TIME.begin(), MEAN_SAVING_TIME.end(), 0.0)/\
+               MEAN_SAVING_TIME.size()) << " SECONDS" << std::endl;
+    std::cout << "AVERAGE CREATION TIME: " << \
+              (std::accumulate(MEAN_CREATION_TIME.begin(), MEAN_CREATION_TIME.end(), 0.0)/\
+               MEAN_CREATION_TIME.size()) << " SECONDS" << std::endl;
     std::cout << "PROCESSED IMAGES: " << PROCESSED_IMAGES << std::endl;
 
     return 0;

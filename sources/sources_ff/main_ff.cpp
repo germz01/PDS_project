@@ -30,9 +30,9 @@ typedef struct delimiter_t {
 
 std::atomic_int PROCESSED_IMAGES = 0;
 int REMAINING_IMAGES = 0;
-std::mutex IMAGES_MUTEX;
+std::mutex IMAGES_MUTEX, LOADING_MUTEX, SAVING_MUTEX;
 
-std::vector<double> MEAN_LATENCIES;
+std::vector<double> MEAN_LATENCIES, MEAN_LOADING_TIME, MEAN_SAVING_TIME;
 
 class Emitter: public ff_node {
     public:
@@ -80,7 +80,16 @@ class Worker: public ff_node {
             ParallelFor pf;
             pf.parallel_for(t -> start, (t -> end) + 1, [=](int i) {
                 CImg<unsigned char> img;
+
+                auto loading_time_start = std::chrono::high_resolution_clock::now();
                 img.assign(images[i].c_str());
+                auto loading_time_end = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double, std::ratio<1>> loading_time = loading_time_end - \
+                                                                            loading_time_start;
+
+                LOADING_MUTEX.lock();
+                MEAN_LOADING_TIME.push_back(loading_time.count());
+                LOADING_MUTEX.unlock();
 
                 if (!(img.width() != 1024 || img.height() != 768)) {
                     cimg_forXY(watermark, x, y) {
@@ -95,11 +104,21 @@ class Worker: public ff_node {
 
                     std::string fname = images[i].substr(images[i].find_last_of('/') + 1);
 
-                    try {
+                    /*try {
                         img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
                     } catch (CImgIOException e) {
                         img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
-                    }
+                    }*/
+
+                    SAVING_MUTEX.lock();
+                    auto saving_time_start = std::chrono::high_resolution_clock::now();
+                    img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
+                    auto saving_time_end = std::chrono::high_resolution_clock::now();
+                    std::chrono::duration<double, std::ratio<1>> saving_time = saving_time_end - \
+                                                                               saving_time_start;
+                    MEAN_SAVING_TIME.push_back(saving_time.count());
+                    SAVING_MUTEX.unlock();
+
                     PROCESSED_IMAGES += 1;
                 }
                 img.clear();
@@ -117,7 +136,15 @@ class Worker: public ff_node {
                     REMAINING_IMAGES -= 1;
                     IMAGES_MUTEX.unlock();
 
+                    auto loading_time_start = std::chrono::high_resolution_clock::now();
                     img.assign(images[idx].c_str());
+                    auto loading_time_end = std::chrono::high_resolution_clock::now();
+                    std::chrono::duration<double, std::ratio<1>> loading_time = loading_time_end - \
+                                                                                loading_time_start;
+
+                    LOADING_MUTEX.lock();
+                    MEAN_LOADING_TIME.push_back(loading_time.count());
+                    LOADING_MUTEX.unlock();
 
                     if (!(img.width() != 1024 || img.height() != 768)) {
                         cimg_forXY(watermark, x, y) {
@@ -132,11 +159,21 @@ class Worker: public ff_node {
 
                         std::string fname = images[idx].substr(images[idx].find_last_of('/') + 1);
 
-                        try {
+                        /*try {
                             img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
                         } catch (CImgIOException e) {
                             img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
-                        }
+                        }*/
+
+                        SAVING_MUTEX.lock();
+                        auto saving_time_start = std::chrono::high_resolution_clock::now();
+                        img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
+                        auto saving_time_end = std::chrono::high_resolution_clock::now();
+                        std::chrono::duration<double, std::ratio<1>> saving_time = saving_time_end - \
+                                                                                   saving_time_start;
+                        MEAN_SAVING_TIME.push_back(saving_time.count());
+                        SAVING_MUTEX.unlock();
+
                         PROCESSED_IMAGES += 1;
                     }
                     img.clear();
@@ -210,6 +247,12 @@ int main(int argc, char const *argv[]) {
     std::cout << "AVERAGE LATENCY: " << \
               (std::accumulate(MEAN_LATENCIES.begin(), MEAN_LATENCIES.end(), 0.0)/MEAN_LATENCIES.size()) \
               << " SECONDS" << std::endl;
+    std::cout << "AVERAGE LOADING TIME: " << \
+              (std::accumulate(MEAN_LOADING_TIME.begin(), MEAN_LOADING_TIME.end(), 0.0)/\
+               MEAN_LOADING_TIME.size()) << " SECONDS" << std::endl;
+    std::cout << "AVERAGE SAVING TIME: " << \
+              (std::accumulate(MEAN_SAVING_TIME.begin(), MEAN_SAVING_TIME.end(), 0.0)/\
+               MEAN_SAVING_TIME.size()) << " SECONDS" << std::endl;
     std::cout << "PROCESSED IMAGES: " << PROCESSED_IMAGES << std::endl;
 
     return 0;

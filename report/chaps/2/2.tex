@@ -1,4 +1,23 @@
 \chapter{Performance modeling} % (fold)
 \label{cha:performance_modeling}
 
+    \section{Selection of the parameters} % (fold)
+    \label{sec:parameters}
+        First things first, for defining the building blocks of the performance model for the image
+        watermarking project, I've chosen the \textit{parameters} to be considered in order to model the
+        performance of the program. Having the goal of describing the performance of the parallel application in
+        the most human-friendly way, I've chosen the basic performance measures of interest in
+        parallel/distributed computing, that is, the \textbf{latency} ($L$), the \textbf{completion time}
+        ($T_C$), the \textbf{service time} ($T_S$), the \textbf{bandwidth} ($\mathcal{B}$), the \textbf{speedup}
+        ($s(n)$), the \textbf{scalability} ($\mathit{scalab}(n)$) and finally the \textbf{efficiency}
+        ($\epsilon(n)$). A detailed explanation of this measures can be founded in \cite{DSPM}, chapter 5.
+    % section parameters (end)
+
+    \section{Collecting the data} % (fold)
+    \label{sec:model_s_usage}
+        Given the parameters to be observed, the data to conduct an analytical valutation of the program's
+        performances was collected at run time, using the utilities provided by the standard C++ library
+        \textit{chrono}. For the experimental results, go to chapter \ref{cha:experimental_validation}.
+    % section model_s_usage (end)
+
 % chapter performance_modeling (end)

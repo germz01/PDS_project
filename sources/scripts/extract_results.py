@@ -1,4 +1,5 @@
 from __future__ import division
+from collections import defaultdict
 import argparse
 import csv
 import os
@@ -30,12 +31,15 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
         start += 1
 
     fieldnames = ['PARALLELISM DEGREE', 'COMPLETION TIME', 'AVERAGE LATENCY',
-                  'SCALABILITY']
+                  'AVERAGE LOADING TIME', 'AVERAGE SAVING TIME',
+                  'AVERAGE CREATION TIME', 'SPEEDUP', 'EFFICIENCY']
 
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
 
     for pd in range(start, args['loop'] + 1):
+        row = defaultdict(float)
+
         print 'TESTING FOR PARALLELISM DEGREE ' + str(pd)
 
         cmd = list()
@@ -51,16 +55,31 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
         out = out.split('\n')
         out = [item for item in out if item != '']
 
-        pd = out[0].replace(' ', '').split(':')[1]
-        ct = out[1].replace(' SECONDS', '').replace(' ', '').split(':')[1]
-        al = out[2].replace(' SECONDS', '').replace(' ', '').split(':')[1]
+        row['pd'] = float(pd)
+        row['ct'] = float(out[1].replace(' SECONDS', '').replace(' ', '').
+                          split(':')[1])
+        row['al'] = float(out[2].replace(' SECONDS', '').replace(' ', '').
+                          split(':')[1])
+        row['avg_load'] = float(out[3].replace(' SECONDS', '').
+                                replace(' ', '').split(':')[1])
+        row['avg_save'] = float(out[4].replace(' SECONDS', '').
+                                replace(' ', '').split(':')[1])
 
-        if pd == '1' or (pd == '2' and args['executable'] == 'fastflow'):
-            t_par_1 = float(ct)
+        if pd != 1:
+            row['avg_creation'] = float(out[5].replace(' SECONDS', '').
+                                        replace(' ', '').split(':')[1])
 
-        scl = round(t_par_1 / float(ct), 2)
+        if pd == 1 or (pd == 2 and args['executable'] == 'fastflow'):
+            t_par_1 = row['ct']
 
-        writer.writerow({'PARALLELISM DEGREE': pd,
-                         'COMPLETION TIME': round(float(ct), 2),
-                         'AVERAGE LATENCY': float(al),
-                         'SCALABILITY': scl})
+        row['speedup'] = t_par_1 / row['ct']
+        row['efficiency'] = row['speedup'] / row['pd']
+
+        writer.writerow({'PARALLELISM DEGREE': row['pd'],
+                         'COMPLETION TIME': row['ct'],
+                         'AVERAGE LATENCY': row['al'],
+                         'AVERAGE LOADING TIME': row['avg_load'],
+                         'AVERAGE SAVING TIME': row['avg_save'],
+                         'AVERAGE CREATION TIME': row['avg_creation'],
+                         'SPEEDUP': row['speedup'],
+                         'EFFICIENCY': row['efficiency']})

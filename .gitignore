@@ -9,6 +9,10 @@ report/*.pdf
 report/*.synctex.gz
 report/*.toc
 report/*.xdv
+report/main.bbl
+report/main.bcf
+report/main.blg
+report/main.run.xml
 report/chaps/titlepage/titlepage.aux
 report/chaps/titlepage/titlepage.fdb_latexmk
 report/chaps/titlepage/titlepage.fls

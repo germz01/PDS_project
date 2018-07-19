@@ -3,11 +3,9 @@
     \pagenumbering{arabic}
     In this first chapter I'll describe the details regarding the \textbf{parallel architecture design} of
     the Image \textit{watermarking} project. In order to follow a certain criterion in the decisions
-    for designing a parallel application, I've followed Figure $6.2$ of
-    \href{https://classroom.google.com/c/MTExMTY4MTg1Mzha/t/MTIyMDY0NDA0NjZa}
-    {\textit{Distributed systems: paradigms and models}}, and, in general, the concepts of chapter $6$. In
-    Figure \ref{fig:parallel_architecture} you can see a representation of the parallel architecture that will
-    be described in the following sections.
+    for designing a parallel application, I've followed Figure $6.2$ of \cite{DSPM}, and, in general, the
+    concepts of chapter $6$. In Figure \ref{fig:parallel_architecture} you can see a representation of the
+    parallel architecture that will be described in the following sections.
 
     \section{Task definition} % (fold)
     \label{sec:task_definition}
@@ -71,9 +69,9 @@
     \label{sec:implementation_mechanisms_design_space}
         In this final section I describe the design space which models the mechanisms needed to support the
         parallel computing abstractions typical of parallel programming, that is, the \textit{implementation
-        mechanisms} design space. I've chosen to use the \textit{synchronization} pattern, since the use of locks
-        and mutexes is necessary to guarantee the sequential access to the image vector during the final phase
-        of the function used to apply the watermark.
+        mechanisms} design space. I've chosen to use the \textit{synchronization} pattern, since the use of
+        locks and mutexes is necessary to guarantee the sequential access to the image vector during the final
+        phase of the function used to apply the watermark.
 
         \begin{figure}[t]
         \centering
@@ -92,14 +90,19 @@
                 every edge/.style={draw=black,very thick}]
                     \path [->] (A) edge node {task} (C);
                     \path [->] (A) edge node {task} (D);
-                    \path [->] (A) edge node {retrieve} (F);
+                    \path [->] (A) edge node {retrieves} (F);
                     \path [->] (C) edge node {access} (E);
-                    \path [->] (C) edge[bend left=30] node {save} (G);
+                    \path [->] (C) edge[bend left=30] node {saves} (G);
                     \path [->] (D) edge node {access} (E);
-                    \path [->] (D) edge[bend right=30] node {save} (G);
+                    \path [->] (D) edge[bend right=30] node {saves} (G);
                 \end{scope}
         \end{tikzpicture}
-        \caption{Representation of the parallel architecture described in this chapter.}
+        \caption{Representation of the parallel architecture described in this chapter. As we can see, the
+        master thread sends a task to every worker. In the context of the watermark project, a task is
+        represented by a set of indexes which are used by the workers in order to access the vector
+        containing the absolute paths to the images. Together with the indexes the master thread also sends
+        a pointer to the watermark, which is used by the workers. Once the workers have ended their
+        computations, they save the new images in a output directory, given in input by the user.}
         \label{fig:parallel_architecture}
         \end{figure}
 

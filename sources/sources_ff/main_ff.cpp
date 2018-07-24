@@ -110,12 +110,6 @@ class Worker: public ff_node {
 
                     std::string fname = images[i].substr(images[i].find_last_of('/') + 1);
 
-                    /*try {
-                        img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
-                    } catch (CImgIOException e) {
-                        img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
-                    }*/
-
                     SAVING_MUTEX.lock();
                     auto saving_time_start = std::chrono::high_resolution_clock::now();
                     img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
@@ -164,12 +158,6 @@ class Worker: public ff_node {
                         }
 
                         std::string fname = images[idx].substr(images[idx].find_last_of('/') + 1);
-
-                        /*try {
-                            img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
-                        } catch (CImgIOException e) {
-                            img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
-                        }*/
 
                         SAVING_MUTEX.lock();
                         auto saving_time_start = std::chrono::high_resolution_clock::now();

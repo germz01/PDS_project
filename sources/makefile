@@ -1,11 +1,19 @@
 UNAME := $(shell uname)
 
-main: main.cpp
 ifeq ($(UNAME),Darwin)
-	g++-8 main.cpp -o main -g -I/usr/X11R6/include -lstdc++fs -lX11 -L/usr/X11R6/lib -O3 -pthread -std=c++17
+	CXX := g++-8
+	CXXFLAGS := -g -I/usr/X11R6/include -O3 -std=c++17
 else
-	g++ main.cpp -o main -g -lstdc++fs -lX11 -L/usr/X11R6/lib -O3 -pthread -std=c++17
+	CXX := g++
+	CXXFLAGS := -g -O3 -std=c++17
 endif
+
+
+LDFLAGS := -L/usr/X11R6/lib -pthread
+LDLIBS := -lstdc++fs -lX11
+
+main: main.cpp
+	$(CXX) main.cpp -o main $(CXXFLAGS) $(LDLIBS) $(LDFLAGS)
 
 .PHONY: clean
 

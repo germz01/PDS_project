@@ -31,9 +31,10 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
         os.chdir(fastflow)
         start += 1
 
-    fieldnames = ['PARALLELISM DEGREE', 'COMPLETION TIME', 'AVERAGE LATENCY',
-                  'AVERAGE LOADING TIME', 'AVERAGE SAVING TIME',
-                  'AVERAGE CREATION TIME', 'SPEEDUP', 'SCALABILITY',
+    fieldnames = ['PARALLELISM DEGREE', 'COMPLETION TIME', 'MEAN LATENCY',
+                  'MEAN LOADING TIME', 'MEAN SAVING TIME',
+                  'MEAN CREATION TIME', 'MEAN SERVICE TIME',
+                  'SPEEDUP', 'SCALABILITY',
                   'EFFICIENCY']
 
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -75,6 +76,8 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
         if pd != 0:
             row['avg_creation'] = float(out[5].replace(' SECONDS', '').
                                         replace(' ', '').split(':')[1])
+            row['avg_service'] = float(out[6].replace(' SECONDS', '').
+                                       replace(' ', '').split(':')[1])
             row['scalability'] = t_par_1 / row['ct']
 
         if args['executable'] != 'fastflow' and pd != 0:
@@ -83,10 +86,11 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
 
         writer.writerow({'PARALLELISM DEGREE': row['pd'],
                          'COMPLETION TIME': row['ct'],
-                         'AVERAGE LATENCY': row['al'],
-                         'AVERAGE LOADING TIME': row['avg_load'],
-                         'AVERAGE SAVING TIME': row['avg_save'],
-                         'AVERAGE CREATION TIME': row['avg_creation'],
+                         'MEAN LATENCY': row['al'],
+                         'MEAN LOADING TIME': row['avg_load'],
+                         'MEAN SAVING TIME': row['avg_save'],
+                         'MEAN CREATION TIME': row['avg_creation'],
+                         'MEAN SERVICE TIME': row['avg_service'],
                          'SPEEDUP': row['speedup'],
                          'SCALABILITY': row['scalability'],
                          'EFFICIENCY': row['efficiency']})

@@ -24,7 +24,8 @@ std::atomic_int PROCESSED_IMAGES = 0;
 int REMAINING_IMAGES = 0;
 std::mutex IMAGES_MUTEX, LOADING_MUTEX, SAVING_MUTEX;
 
-std::vector<double> MEAN_LATENCIES, MEAN_LOADING_TIME, MEAN_SAVING_TIME, MEAN_CREATION_TIME;
+std::vector<double> MEAN_LATENCIES, MEAN_LOADING_TIME, MEAN_SAVING_TIME, MEAN_CREATION_TIME, \
+                    MEAN_SERVICE_TIME;
 
 double mean(std::vector<double>& vect) {
  double mean = std::accumulate(vect.begin(), vect.end(), 0.0)/vect.size();
@@ -37,7 +38,16 @@ void apply_watermark(std::vector<std::string>& images, CImg<unsigned char>& wate
     auto latency_time_start = std::chrono::high_resolution_clock::now();
     CImg<unsigned char> img;
 
+    auto service_1 = std::chrono::high_resolution_clock::now();
+    std::vector<double> service_time_vect;
+
     for (int i = start; i <= end; i++) {
+
+        if (i != start) {
+            auto service_2 = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double, std::ratio<1>> service_time = service_2 - service_1;
+            service_time_vect.push_back(service_time.count());
+        }
 
         auto loading_time_start = std::chrono::high_resolution_clock::now();
         img.assign(images[i].c_str());
@@ -79,6 +89,9 @@ void apply_watermark(std::vector<std::string>& images, CImg<unsigned char>& wate
             PROCESSED_IMAGES += 1;
         }
         img.clear();
+
+        service_1 = std::chrono::high_resolution_clock::now();
+
     }
 
     while (true) {
@@ -129,6 +142,7 @@ void apply_watermark(std::vector<std::string>& images, CImg<unsigned char>& wate
     std::chrono::duration<double, std::ratio<1>> latency_time = latency_time_end - \
                                                                 latency_time_start;
     MEAN_LATENCIES.push_back(latency_time.count());
+    MEAN_SERVICE_TIME.push_back(mean(std::ref(service_time_vect)));
     return;
 }
 
@@ -231,6 +245,7 @@ int main(int argc, char const *argv[]) {
     std::cout << "MEAN LOADING TIME: " << mean(std::ref(MEAN_LOADING_TIME)) << " SECONDS" << std::endl;
     std::cout << "MEAN SAVING TIME: " << mean(std::ref(MEAN_SAVING_TIME)) << " SECONDS" << std::endl;
     std::cout << "MEAN CREATION TIME: " << mean(std::ref(MEAN_CREATION_TIME)) << " SECONDS" << std::endl;
+    std::cout << "MEAN SERVICE TIME: " << mean(std::ref(MEAN_SERVICE_TIME)) << " SECONDS" << std::endl;
     std::cout << "PROCESSED IMAGES: " << PROCESSED_IMAGES << std::endl;
 
     return 0;

@@ -1,12 +1,12 @@
-#include <atomic>
 #include <cassert>
 #include <chrono>
+#include <cstddef>
 #include "CImg.h"
+#include "utilities.hpp"
 #include <cstdlib>
 #include <experimental/filesystem>
 #include <functional>
 #include <iostream>
-#include <mutex>
 #include <numeric>
 #include <string>
 #include <thread>
@@ -16,226 +16,194 @@
 using namespace cimg_library;
 namespace fs = std::experimental::filesystem;
 
-#define IMG_NUM 44
-#define W 1024
-#define H 768
+void parse_watermark(std::vector<point_t>& vect, CImg<unsigned char>& watermark) {
+    int current_index = 0;
 
-std::atomic_int PROCESSED_IMAGES = 0;
-int REMAINING_IMAGES = 0;
-std::mutex IMAGES_MUTEX, LOADING_MUTEX, SAVING_MUTEX;
+    for (int x = 0; x < watermark.width(); x++) {
+        for (int y = 0; y < watermark.height(); y++) {
+            int r = (int)watermark(x, y, 0, 0);
 
-std::vector<double> MEAN_LATENCIES, MEAN_LOADING_TIME, MEAN_SAVING_TIME, MEAN_CREATION_TIME, \
-                    MEAN_SERVICE_TIME;
-
-double mean(std::vector<double>& vect) {
- double mean = std::accumulate(vect.begin(), vect.end(), 0.0)/vect.size();
-
- return mean;
+            if (r == 0) {
+                vect.push_back(point_t());
+                vect[current_index].x = x;
+                vect[current_index].y = y;
+                current_index += 1;
+            }
+        }
+    }
 }
 
-void apply_watermark(std::vector<std::string>& images, CImg<unsigned char>& watermark, int start, int end, \
-                     std::string output_dir) {
-    auto latency_time_start = std::chrono::high_resolution_clock::now();
-    CImg<unsigned char> img;
+void check_output_dir(std::string path) {
+    if (!(fs::exists(path))) {
+        fs::create_directory(path);
+    }
+}
 
-    auto service_1 = std::chrono::high_resolution_clock::now();
-    std::vector<double> service_time_vect;
+double stats(std::string statistic, std::vector<double>& vect) {
+    double stat;
 
-    for (int i = start; i <= end; i++) {
-
-        if (i != start) {
-            auto service_2 = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::ratio<1>> service_time = service_2 - service_1;
-            service_time_vect.push_back(service_time.count());
-        }
-
-        auto loading_time_start = std::chrono::high_resolution_clock::now();
-        img.assign(images[i].c_str());
-        auto loading_time_end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::ratio<1>> loading_time = loading_time_end - \
-                                                                    loading_time_start;
-
-        LOADING_MUTEX.lock();
-        MEAN_LOADING_TIME.push_back(loading_time.count());
-        LOADING_MUTEX.unlock();
-
-        if (!(img.width() != 1024 || img.height() != 768)) {
-            cimg_forXY(watermark, x, y) {
-                int R = (int)watermark(x, y, 0, 0);
-
-                if (R != 255) {
-                    img(x, y, 0, 0) = 0;
-                    img(x, y, 0, 1) = 0;
-                    img(x, y, 0, 2) = 0;
-                }
-            }
-
-            std::string fname = images[i].substr(images[i].find_last_of('/') + 1);
-
-            SAVING_MUTEX.lock();
-            auto saving_time_start = std::chrono::high_resolution_clock::now();
-            img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
-            auto saving_time_end = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::ratio<1>> saving_time = saving_time_end - \
-                                                                       saving_time_start;
-            MEAN_SAVING_TIME.push_back(saving_time.count());
-            SAVING_MUTEX.unlock();
-
-            PROCESSED_IMAGES += 1;
-        }
-        img.clear();
-
-        service_1 = std::chrono::high_resolution_clock::now();
-
+    if (statistic == "mean") {
+        stat = std::accumulate(vect.begin(), vect.end(), 0.0)/vect.size();
+    } else {
+        stat = std::accumulate(vect.begin(), vect.end(), 0.0);
     }
 
-    while (true) {
-        IMAGES_MUTEX.lock();
-        if (REMAINING_IMAGES == 0) {
-            IMAGES_MUTEX.unlock();
+    return stat;
+}
+
+
+void apply_watermark(CImg<unsigned char>& image, std::vector<point_t>& black_pixels) {
+    for (point_t pixel : black_pixels) {
+            image(pixel.x, pixel.y, 0, 0) = 0;
+            image(pixel.x, pixel.y, 0, 1) = 0;
+            image(pixel.x, pixel.y, 0, 2) = 0;
+        }
+}
+
+void fill_queue(std::string images_directory, int delay) {
+    for (auto& path : fs::directory_iterator(images_directory)) {
+            std::string fname = path.path().string().substr(path.path().string().find_last_of('/') + 1);
+
+            if (fname != ".DS_Store") {
+                auto loading_time_start = std::chrono::high_resolution_clock::now();
+                CImg<unsigned char> *img = new CImg<unsigned char>(path.path().string().c_str());
+                auto loading_time_end = std::chrono::high_resolution_clock::now() - loading_time_start;
+                auto loading_time = std::chrono::duration_cast<std::chrono::microseconds>(loading_time_end). \
+                                    count();
+                LOADING_TIME.push_back(loading_time);
+
+                image_t *to_push = new image_t();
+                to_push -> image = img;
+                to_push -> name = fname;
+
+                {
+                    std::lock_guard<std::mutex> lk(IMAGES_MUTEX);
+                    IMAGES.push_front(to_push);
+                }
+                cv.notify_all();
+
+                std::this_thread::sleep_for(std::chrono::microseconds(delay));
+            }
+        }
+
+    {
+        std::lock_guard<std::mutex> lk(IMAGES_MUTEX);
+        IMAGES.push_front(nullptr);
+    }
+    cv.notify_all();
+}
+
+void process_image(std::vector<point_t>& black_pixels, std::string output_directory) {
+    while(true) {
+        std::unique_lock<std::mutex> lk(IMAGES_MUTEX);
+        cv.wait(lk, []{return !IMAGES.empty();});
+
+        if (IMAGES.back() == nullptr) {
+            lk.unlock();
             break;
         } else {
-            int idx = images.size() - REMAINING_IMAGES;
-            REMAINING_IMAGES -= 1;
-            IMAGES_MUTEX.unlock();
+            image_t *img = IMAGES.back();
+            IMAGES.pop_back();
+            lk.unlock();
 
-            img.assign(images[idx].c_str());
+            auto latency_start = std::chrono::high_resolution_clock::now();
+            apply_watermark(*(img -> image), std::ref(black_pixels));
+            auto latency_end = std::chrono::high_resolution_clock::now() - latency_start;
+            auto latency = std::chrono::duration_cast<std::chrono::microseconds>(latency_end).count();
 
-            if (!(img.width() != 1024 || img.height() != 768)) {
-                cimg_forXY(watermark, x, y) {
-                    int R = (int)watermark(x, y, 0, 0);
-
-                    if (R != 255) {
-                        img(x, y, 0, 0) = 0;
-                        img(x, y, 0, 1) = 0;
-                        img(x, y, 0, 2) = 0;
-                    }
+            {
+                std::lock_guard<std::mutex> lk(LAT_MUTEX);
+                LATENCIES.push_back(latency);
             }
 
-                std::string fname = images[idx].substr(images[idx].find_last_of('/') + 1);
+            auto saving_time_start = std::chrono::high_resolution_clock::now();
+            (img -> image) -> save((output_directory + "/" + (img -> name)).c_str());
+            auto saving_time_end = std::chrono::high_resolution_clock::now() - saving_time_start;
+            auto saving_time = std::chrono::duration_cast<std::chrono::microseconds>(saving_time_end).count();
 
-                SAVING_MUTEX.lock();
-                auto saving_time_start = std::chrono::high_resolution_clock::now();
-                img.save_jpeg(((std::string)output_dir + (std::string)"/" + fname).c_str());
-                auto saving_time_end = std::chrono::high_resolution_clock::now();
-                std::chrono::duration<double, std::ratio<1>> saving_time = saving_time_end - \
-                                                                           saving_time_start;
-                MEAN_SAVING_TIME.push_back(saving_time.count());
-                SAVING_MUTEX.unlock();
-
-                PROCESSED_IMAGES += 1;
+            {
+                std::lock_guard<std::mutex> lk(SAV_MUTEX);
+                SAVING_TIME.push_back(saving_time);
             }
-            img.clear();
         }
+        PROCESSED_IMAGES += 1;
     }
-    auto latency_time_end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::ratio<1>> latency_time = latency_time_end - \
-                                                                latency_time_start;
-    MEAN_LATENCIES.push_back(latency_time.count());
-    MEAN_SERVICE_TIME.push_back(mean(std::ref(service_time_vect)));
-    return;
 }
 
 int main(int argc, char const *argv[]) {
     auto completion_time_start = std::chrono::high_resolution_clock::now();
 
-    assert((argc == 5) && fs::exists(argv[2]) && fs::exists(argv[1]));
-
-    int par_degree = std::atoi(argv[3]);
-
-    assert(par_degree <= IMG_NUM);
+    assert((argc == 6) && fs::exists(argv[1]) && fs::exists(argv[2]));
 
     CImg<unsigned char> watermark(argv[2]);
-    std::vector<std::string> images;
+    int par_degree = std::atoi(argv[3]), delay = std::atoi(argv[5]);
+    std::vector<point_t> black_pixels;
 
-    for (auto& path : fs::directory_iterator(argv[1])) {
-        std::string fname = path.path().string().substr(path.path().string().find_last_of('/') + 1);
-
-        if (fname != ".DS_Store") {
-            images.push_back(path.path().string());
-        }
-    }
-
-    if (!(fs::exists((std::string)argv[4]))) {
-        fs::create_directory((std::string)argv[4]);
-    }
+    parse_watermark(std::ref(black_pixels), std::ref(watermark));
+    check_output_dir((std::string)argv[4]);
 
     if (par_degree == 0) {
-        auto latency_time_start = std::chrono::high_resolution_clock::now();
-        for (int i = 0; i < images.size(); i++){
-            auto loading_time_start = std::chrono::high_resolution_clock::now();
-            CImg<unsigned char> img(images[i].c_str());
-            auto loading_time_end = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::ratio<1>> loading_time = loading_time_end - \
-                                                                        loading_time_start;
-            MEAN_LOADING_TIME.push_back(loading_time.count());
+        for (auto& path : fs::directory_iterator(argv[1])) {
+            std::string fname = path.path().string().substr(path.path().string().find_last_of('/') + 1);
 
-            if (!(img.width() != W || img.height() != H)) {
-                cimg_forXY(watermark, x, y) {
-                    int R = (int)watermark(x, y, 0, 0);
+            if (fname != ".DS_Store") {
+                auto loading_time_start = std::chrono::high_resolution_clock::now();
+                CImg<unsigned char> img(path.path().string().c_str());
+                auto loading_time_end = std::chrono::high_resolution_clock::now() - loading_time_start;
+                auto loading_time = std::chrono::duration_cast<std::chrono::microseconds>(loading_time_end).\
+                                    count();
+                LOADING_TIME.push_back(loading_time);
 
-                    if (R != 255) {
-                        img(x, y, 0, 0) = 0;
-                        img(x, y, 0, 1) = 0;
-                        img(x, y, 0, 2) = 0;
-                    }
+                auto latency_start = std::chrono::high_resolution_clock::now();
+                for (point_t pixel : black_pixels) {
+                    img(pixel.x, pixel.y, 0, 0) = 0;
+                    img(pixel.x, pixel.y, 0, 1) = 0;
+                    img(pixel.x, pixel.y, 0, 2) = 0;
                 }
-
-                std::string fname = images[i].substr(images[i].find_last_of('/') + 1);
+                auto latency_end = std::chrono::high_resolution_clock::now() - latency_start;
+                auto latency = std::chrono::duration_cast<std::chrono::microseconds>(latency_end).count();
+                LATENCIES.push_back(latency);
 
                 auto saving_time_start = std::chrono::high_resolution_clock::now();
-                try {
-                    img.save_jpeg(((std::string)argv[4] + (std::string)"/" + fname).c_str());
-                } catch (CImgIOException e) {
-                    img.save_jpeg(((std::string)argv[4] + (std::string)"/" + fname).c_str());
-                }
-                auto saving_time_end = std::chrono::high_resolution_clock::now();
-                std::chrono::duration<double, std::ratio<1>> saving_time = saving_time_end - \
-                                                                           saving_time_start;
-                MEAN_SAVING_TIME.push_back(saving_time.count());
+                img.save(((std::string)argv[4] + (std::string)"/" + fname).c_str());
+                auto saving_time_end = std::chrono::high_resolution_clock::now() - saving_time_start;
+                auto saving_time = std::chrono::duration_cast<std::chrono::microseconds>(saving_time_end).\
+                                   count();
+                SAVING_TIME.push_back(saving_time);
 
                 PROCESSED_IMAGES += 1;
+                std::this_thread::sleep_for(std::chrono::microseconds(delay));
             }
         }
-        auto latency_time_end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::ratio<1>> latency_time = latency_time_end - \
-                                                                    latency_time_start;
-        MEAN_LATENCIES.push_back(latency_time.count());
     } else {
-        int workload = (int)images.size() / par_degree;
-        REMAINING_IMAGES = images.size() - (workload * par_degree);
-
-        int start = 0, end = (start + workload) - 1;
         std::thread workers[par_degree];
 
         for (int i = 0; i < par_degree; i++) {
             auto creation_time_start = std::chrono::high_resolution_clock::now();
-            workers[i] = std::thread(apply_watermark, std::ref(images), std::ref(watermark), start, end, \
-                                     (std::string)argv[4]);
-            auto creation_time_end = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::ratio<1>> creation_time = creation_time_end - \
-                                                                         creation_time_start;
-            MEAN_CREATION_TIME.push_back(creation_time.count());
-            start = end + 1;
-            end = (start + workload) - 1;
+            workers[i] = std::thread(process_image, std::ref(black_pixels) , (std::string)argv[4]);
+            auto creation_time_end = std::chrono::high_resolution_clock::now() - creation_time_start;
+            auto creation_time = std::chrono::duration_cast<std::chrono::microseconds>(creation_time_end).\
+                                 count();
+            CREATION_TIME.push_back(creation_time);
         }
+
+        fill_queue((std::string)argv[1], delay);
 
         for (int i = 0; i < par_degree; i++) {
             workers[i].join();
         }
+
     }
 
-    auto completion_time_end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::ratio<1>> completion_time = completion_time_end - \
-                                                                   completion_time_start;
+    auto completion_time_end = std::chrono::high_resolution_clock::now() - completion_time_start;
+    auto completion_time = std::chrono::duration_cast<std::chrono::microseconds>(completion_time_end).count();
 
     std::cout << "\nPARALLELISM DEGREE: " << par_degree << std::endl;
-    std::cout << "COMPLETION TIME: " << completion_time.count() << " SECONDS" << std::endl;
-    std::cout << "MEAN LATENCY: " << mean(std::ref(MEAN_LATENCIES)) << " SECONDS" << std::endl;
-    std::cout << "MEAN LOADING TIME: " << mean(std::ref(MEAN_LOADING_TIME)) << " SECONDS" << std::endl;
-    std::cout << "MEAN SAVING TIME: " << mean(std::ref(MEAN_SAVING_TIME)) << " SECONDS" << std::endl;
-    std::cout << "MEAN CREATION TIME: " << mean(std::ref(MEAN_CREATION_TIME)) << " SECONDS" << std::endl;
-    std::cout << "MEAN SERVICE TIME: " << mean(std::ref(MEAN_SERVICE_TIME)) << " SECONDS" << std::endl;
+    std::cout << "COMPLETION TIME: " << completion_time << " \u03BCs" << std::endl;
+    std::cout << "MEAN LATENCY: " << stats("mean", std::ref(LATENCIES)) << " \u03BCs" << std::endl;
+    std::cout << "MEAN LOADING TIME: " << stats("mean", std::ref(LOADING_TIME)) << " \u03BCs" << std::endl;
+    std::cout << "MEAN SAVING TIME: " << stats("mean", std::ref(SAVING_TIME)) << " \u03BCs" << std::endl;
+    std::cout << "MEAN CREATION TIME: " << stats("mean", std::ref(CREATION_TIME)) << " \u03BCs" << std::endl;
     std::cout << "PROCESSED IMAGES: " << PROCESSED_IMAGES << std::endl;
 
     return 0;

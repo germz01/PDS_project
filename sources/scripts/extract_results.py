@@ -17,11 +17,15 @@ parser = argparse.ArgumentParser(description="This script collects data" +
 parser.add_argument('-e', '--executable', type=str, choices=['standard',
                     'fastflow'], default='standard',
                     help='Which executable should be tested.')
-parser.add_argument('-l', '--loop', type=int,
+parser.add_argument('-l', '--loop', type=int, default=10,
                     help='Number of iterations the main program' +
                     ' have to be executed.')
+parser.add_argument('-d', '--delay', type=int, default=100,
+                    help='The delay represents the time that the emitter have'
+                    ' to wait before sending a new image into the stream.')
 parser.add_argument('-n', '--name', type=str,
-                    help='Name of the file in which the results will be saved')
+                    help='Name of the file in which the results will be '
+                    'saved.')
 args = vars(parser.parse_args())
 
 with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
@@ -33,9 +37,7 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
 
     fieldnames = ['PARALLELISM DEGREE', 'COMPLETION TIME', 'MEAN LATENCY',
                   'MEAN LOADING TIME', 'MEAN SAVING TIME',
-                  'MEAN CREATION TIME', 'MEAN SERVICE TIME',
-                  'SPEEDUP', 'SCALABILITY',
-                  'EFFICIENCY']
+                  'MEAN CREATION TIME', 'SPEEDUP', 'SCALABILITY', 'EFFICIENCY']
 
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
@@ -49,24 +51,20 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
 
         if args['executable'] == 'standard':
             cmd = ['./main', '../imgs', '../watermark.jpg', str(pd),
-                   '../output_dir']
+                   '../output_dir', str(args['delay'])]
         else:
             cmd = ['./main', '../../imgs', '../../watermark.jpg', str(pd),
-                   '../../output_dir']
+                   '../../output_dir', str(args['delay'])]
 
         out = subprocess.check_output(cmd)
         out = out.split('\n')
         out = [item for item in out if item != '']
 
         row['pd'] = float(pd)
-        row['ct'] = float(out[1].replace(' SECONDS', '').replace(' ', '').
-                          split(':')[1])
-        row['al'] = float(out[2].replace(' SECONDS', '').replace(' ', '').
-                          split(':')[1])
-        row['avg_load'] = float(out[3].replace(' SECONDS', '').
-                                replace(' ', '').split(':')[1])
-        row['avg_save'] = float(out[4].replace(' SECONDS', '').
-                                replace(' ', '').split(':')[1])
+        row['ct'] = float(out[1].split(':')[1].split(' ')[1])
+        row['al'] = float(out[2].split(':')[1].split(' ')[1])
+        row['avg_load'] = float(out[3].split(':')[1].split(' ')[1])
+        row['avg_save'] = float(out[4].split(':')[1].split(' ')[1])
 
         if pd == 0:
             t_seq = row['ct']
@@ -74,10 +72,7 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
             t_par_1 = row['ct']
 
         if pd != 0:
-            row['avg_creation'] = float(out[5].replace(' SECONDS', '').
-                                        replace(' ', '').split(':')[1])
-            row['avg_service'] = float(out[6].replace(' SECONDS', '').
-                                       replace(' ', '').split(':')[1])
+            row['avg_creation'] = float(out[5].split(':')[1].split(' ')[1])
             row['scalability'] = t_par_1 / row['ct']
 
         if args['executable'] != 'fastflow' and pd != 0:
@@ -90,7 +85,6 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
                          'MEAN LOADING TIME': row['avg_load'],
                          'MEAN SAVING TIME': row['avg_save'],
                          'MEAN CREATION TIME': row['avg_creation'],
-                         'MEAN SERVICE TIME': row['avg_service'],
                          'SPEEDUP': row['speedup'],
                          'SCALABILITY': row['scalability'],
                          'EFFICIENCY': row['efficiency']})

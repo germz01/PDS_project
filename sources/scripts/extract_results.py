@@ -4,6 +4,7 @@ import argparse
 import csv
 import os
 import pandas
+import platform
 import subprocess
 
 standard = '../'
@@ -74,8 +75,15 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
                 t_par_1 = row['ct']
 
                 if args['executable'] == 'fastflow':
-                    f = pandas.read_csv(filepath_or_buffer='../../results/'
-                                        'performance_laptop.csv')
+                    f = None
+
+                    if platform.system() == 'Darwin':
+                        f = pandas.read_csv(filepath_or_buffer='../../results/'
+                                            'performance_laptop.csv')
+                    else:
+                        f = pandas.read_csv(filepath_or_buffer='../../results'
+                                            'performance_xeon.csv')
+
                     t_seq = f['COMPLETION TIME'][0]
 
             row['avg_creation'] = float(out[5].split(':')[1].split(' ')[1])

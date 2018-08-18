@@ -30,9 +30,9 @@ class Emitter: public ff_node {
         delay(delay), img_names(img_names) {}
 
         void * svc(void *) {
-            image_t * t = (image_t *) calloc(1, sizeof(image_t));
+            while (!(img_names.empty())) {
+                image_t * t = (image_t *) calloc(1, sizeof(image_t));
 
-            if (!(img_names.empty())) {
                 auto loading_time_start = std::chrono::high_resolution_clock::now();
                 CImg<unsigned char> *img = new CImg<unsigned char>(img_names.front().c_str());
                 auto loading_time_end = std::chrono::high_resolution_clock::now() - loading_time_start;
@@ -48,10 +48,10 @@ class Emitter: public ff_node {
                 img_names.pop();
                 std::this_thread::sleep_for(std::chrono::microseconds(delay));
 
-                return t;
-            } else {
-                return NULL;
+                ff_send_out(t);
             }
+
+            return NULL;
         }
 
     private:
@@ -90,7 +90,7 @@ class Worker: public ff_node {
 
             PROCESSED_IMAGES += 1;
 
-            return NULL;
+            return GO_ON;
         }
 
     private:

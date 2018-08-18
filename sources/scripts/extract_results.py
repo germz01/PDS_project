@@ -3,6 +3,7 @@ from collections import defaultdict
 import argparse
 import csv
 import os
+import pandas
 import subprocess
 
 standard = '../'
@@ -68,14 +69,17 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
 
         if pd == 0:
             t_seq = row['ct']
-        elif pd == 1:
-            t_par_1 = row['ct']
+        else:
+            if pd == 1:
+                t_par_1 = row['ct']
 
-        if pd != 0:
+                if args['executable'] == 'fastflow':
+                    f = pandas.read_csv(filepath_or_buffer='../../results/'
+                                        'performance_laptop.csv')
+                    t_seq = f['COMPLETION TIME'][0]
+
             row['avg_creation'] = float(out[5].split(':')[1].split(' ')[1])
             row['scalability'] = t_par_1 / row['ct']
-
-        if args['executable'] != 'fastflow' and pd != 0:
             row['speedup'] = t_seq / row['ct']
             row['efficiency'] = row['speedup'] / row['pd']
 

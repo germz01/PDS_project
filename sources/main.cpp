@@ -104,7 +104,7 @@ int main(int argc, char const *argv[]) {
         for (auto& path : fs::directory_iterator(argv[1])) {
             std::string fname = path.path().string().substr(path.path().string().find_last_of('/') + 1);
 
-            if (fname != ".DS_Store" && fname != "2.jpg") {
+            if (fname != ".DS_Store") {
 		        auto loading_time_start = std::chrono::high_resolution_clock::now();
                 img = new CImg<unsigned char>(path.path().string().c_str());
                 auto loading_time_end = std::chrono::high_resolution_clock::now() - loading_time_start;
@@ -112,15 +112,11 @@ int main(int argc, char const *argv[]) {
                                     count();
                 LOADING_TIME.push_back(loading_time);
 
-		        std::cout << "Loaded " << path.path().string().c_str() << std::endl;
-
                 auto latency_start = std::chrono::high_resolution_clock::now();
                 apply_watermark(*(img), std::ref(black_pixels));
                 auto latency_end = std::chrono::high_resolution_clock::now() - latency_start;
                 auto latency = std::chrono::duration_cast<std::chrono::microseconds>(latency_end).count();
                 LATENCIES.push_back(latency);
-
-		        std::cout << "Applied watermark on " << path.path().string().c_str() << std::endl;
 
 		        auto saving_time_start = std::chrono::high_resolution_clock::now();
                 img -> save(((std::string)argv[4] + (std::string)"/" + fname).c_str());
@@ -129,22 +125,10 @@ int main(int argc, char const *argv[]) {
                                    count();
                 SAVING_TIME.push_back(saving_time);
 
-		        std::cout << "Saved " << path.path().string().c_str() << std::endl;
-
                 PROCESSED_IMAGES += 1;
                 std::this_thread::sleep_for(std::chrono::microseconds(delay));
 
-        		std::cout << "Updated counter" << std::endl;
-
-                if (img == nullptr) {
-                    std::cout << "Null pointer" << std::endl;
-                }
-
         		delete img;
-
-        		std::cout << "Deleted pointer" << std::endl;
-
-        		std::cout << "Ok " << path.path().string().c_str() << std::endl;
             }
         }
     } else {

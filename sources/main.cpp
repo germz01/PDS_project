@@ -13,12 +13,14 @@
 using namespace cimg_library;
 
 void fill_queue(std::string images_directory, int delay) {
+    CImg<unsigned char> *img;
+
     for (auto& path : fs::directory_iterator(images_directory)) {
             std::string fname = path.path().string().substr(path.path().string().find_last_of('/') + 1);
 
             if (fname != ".DS_Store") {
                 auto loading_time_start = std::chrono::high_resolution_clock::now();
-                CImg<unsigned char> *img = new CImg<unsigned char>(path.path().string().c_str());
+                img = new CImg<unsigned char>(path.path().string().c_str());
                 auto loading_time_end = std::chrono::high_resolution_clock::now() - loading_time_start;
                 auto loading_time = std::chrono::duration_cast<std::chrono::microseconds>(loading_time_end). \
                                     count();
@@ -77,12 +79,14 @@ void process_image(std::vector<point_t>& black_pixels, std::string output_direct
                 std::lock_guard<std::mutex> lk(SAV_MUTEX);
                 SAVING_TIME.push_back(saving_time);
             }
+
+            delete img;
         }
         PROCESSED_IMAGES += 1;
     }
 }
 
-int main(int argc, char const *argv[]) {  
+int main(int argc, char const *argv[]) {
     auto completion_time_start = std::chrono::high_resolution_clock::now();
 
     assert((argc == 6) && fs::exists(argv[1]) && fs::exists(argv[2]));
@@ -92,34 +96,30 @@ int main(int argc, char const *argv[]) {
     std::vector<point_t> black_pixels;
 
     parse_watermark(std::ref(black_pixels), std::ref(watermark));
-    check_output_dir((std::string)argv[4]); 
+    check_output_dir((std::string)argv[4]);
 
     if (par_degree == 0) {
+        CImg<unsigned char> *img;
+
         for (auto& path : fs::directory_iterator(argv[1])) {
             std::string fname = path.path().string().substr(path.path().string().find_last_of('/') + 1);
 
             if (fname != ".DS_Store") {
-                std::cout << path.path().string().c_str() << " ok" << std::endl;
-
-		auto loading_time_start = std::chrono::high_resolution_clock::now();
-                CImg<unsigned char> img(path.path().string().c_str());
+		        auto loading_time_start = std::chrono::high_resolution_clock::now();
+                img = new CImg<unsigned char>(path.path().string().c_str());
                 auto loading_time_end = std::chrono::high_resolution_clock::now() - loading_time_start;
                 auto loading_time = std::chrono::duration_cast<std::chrono::microseconds>(loading_time_end).\
                                     count();
                 LOADING_TIME.push_back(loading_time);
 
                 auto latency_start = std::chrono::high_resolution_clock::now();
-                for (point_t pixel : black_pixels) {
-                    img(pixel.x, pixel.y, 0, 0) = 0;
-                    img(pixel.x, pixel.y, 0, 1) = 0;
-                    img(pixel.x, pixel.y, 0, 2) = 0;
-                }
+                apply_watermark(*(img), std::ref(black_pixels));
                 auto latency_end = std::chrono::high_resolution_clock::now() - latency_start;
                 auto latency = std::chrono::duration_cast<std::chrono::microseconds>(latency_end).count();
                 LATENCIES.push_back(latency);
 
                 auto saving_time_start = std::chrono::high_resolution_clock::now();
-                img.save(((std::string)argv[4] + (std::string)"/" + fname).c_str());
+                img -> save(((std::string)argv[4] + (std::string)"/" + fname).c_str());
                 auto saving_time_end = std::chrono::high_resolution_clock::now() - saving_time_start;
                 auto saving_time = std::chrono::duration_cast<std::chrono::microseconds>(saving_time_end).\
                                    count();
@@ -128,7 +128,7 @@ int main(int argc, char const *argv[]) {
                 PROCESSED_IMAGES += 1;
                 std::this_thread::sleep_for(std::chrono::microseconds(delay));
 
-		img.clear();	
+                delete img;
             }
         }
     } else {

@@ -104,7 +104,7 @@ int main(int argc, char const *argv[]) {
         for (auto& path : fs::directory_iterator(argv[1])) {
             std::string fname = path.path().string().substr(path.path().string().find_last_of('/') + 1);
 
-            if (fname != ".DS_Store") {
+            if (fname != ".DS_Store" && fname != "2.jpg") {
 		        auto loading_time_start = std::chrono::high_resolution_clock::now();
                 img = new CImg<unsigned char>(path.path().string().c_str());
                 auto loading_time_end = std::chrono::high_resolution_clock::now() - loading_time_start;
@@ -136,7 +136,7 @@ int main(int argc, char const *argv[]) {
 
         		std::cout << "Updated counter" << std::endl;
 
-                if (img == NULL) {
+                if (img == nullptr) {
                     std::cout << "Null pointer" << std::endl;
                 }
 

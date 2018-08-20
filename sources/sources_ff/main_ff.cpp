@@ -90,6 +90,8 @@ class Worker: public ff_node {
 
             PROCESSED_IMAGES += 1;
 
+            delete t;
+
             return GO_ON;
         }
 

@@ -82,7 +82,7 @@ void process_image(std::vector<point_t>& black_pixels, std::string output_direct
     }
 }
 
-int main(int argc, char const *argv[]) {
+int main(int argc, char const *argv[]) {  
     auto completion_time_start = std::chrono::high_resolution_clock::now();
 
     assert((argc == 6) && fs::exists(argv[1]) && fs::exists(argv[2]));
@@ -92,14 +92,16 @@ int main(int argc, char const *argv[]) {
     std::vector<point_t> black_pixels;
 
     parse_watermark(std::ref(black_pixels), std::ref(watermark));
-    check_output_dir((std::string)argv[4]);
+    check_output_dir((std::string)argv[4]); 
 
     if (par_degree == 0) {
         for (auto& path : fs::directory_iterator(argv[1])) {
             std::string fname = path.path().string().substr(path.path().string().find_last_of('/') + 1);
 
             if (fname != ".DS_Store") {
-                auto loading_time_start = std::chrono::high_resolution_clock::now();
+                std::cout << path.path().string().c_str() << " ok" << std::endl;
+
+		auto loading_time_start = std::chrono::high_resolution_clock::now();
                 CImg<unsigned char> img(path.path().string().c_str());
                 auto loading_time_end = std::chrono::high_resolution_clock::now() - loading_time_start;
                 auto loading_time = std::chrono::duration_cast<std::chrono::microseconds>(loading_time_end).\
@@ -125,6 +127,8 @@ int main(int argc, char const *argv[]) {
 
                 PROCESSED_IMAGES += 1;
                 std::this_thread::sleep_for(std::chrono::microseconds(delay));
+
+		img.clear();	
             }
         }
     } else {

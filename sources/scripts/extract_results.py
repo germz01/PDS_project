@@ -3,7 +3,6 @@ from collections import defaultdict
 import argparse
 import csv
 import os
-import pandas
 import platform
 import subprocess
 
@@ -78,13 +77,12 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
                     f = None
 
                     if platform.system() == 'Darwin':
-                        f = pandas.read_csv(filepath_or_buffer='../../results/'
-                                            'performance_laptop.csv')
+                        f = open('../../results/performance_laptop.csv')
                     else:
-                        f = pandas.read_csv(filepath_or_buffer='../../results'
-                                            'performance_xeon.csv')
+                        f = open('../../resultsperformance_xeon.csv')
 
-                    t_seq = f['COMPLETION TIME'][0]
+                    reader = csv.DictReader(f)
+                    t_seq = float(reader.next()['COMPLETION TIME'])
 
             row['avg_creation'] = float(out[5].split(':')[1].split(' ')[1])
             row['scalability'] = t_par_1 / row['ct']

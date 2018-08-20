@@ -79,7 +79,7 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
                     if platform.system() == 'Darwin':
                         f = open('../../results/performance_laptop.csv')
                     else:
-                        f = open('../../resultsperformance_xeon.csv')
+                        f = open('../../results/performance_xeon.csv')
 
                     reader = csv.DictReader(f)
                     t_seq = float(reader.next()['COMPLETION TIME'])

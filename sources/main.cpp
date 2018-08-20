@@ -112,7 +112,7 @@ int main(int argc, char const *argv[]) {
                                     count();
                 LOADING_TIME.push_back(loading_time);
 
-		std::cout << "Loaded " << path.path().string().c_str() << std::endl;
+		        std::cout << "Loaded " << path.path().string().c_str() << std::endl;
 
                 auto latency_start = std::chrono::high_resolution_clock::now();
                 apply_watermark(*(img), std::ref(black_pixels));
@@ -120,27 +120,31 @@ int main(int argc, char const *argv[]) {
                 auto latency = std::chrono::duration_cast<std::chrono::microseconds>(latency_end).count();
                 LATENCIES.push_back(latency);
 
-		std::cout << "Applied watermark on " << path.path().string().c_str() << std::endl;
-                
-		auto saving_time_start = std::chrono::high_resolution_clock::now();
+		        std::cout << "Applied watermark on " << path.path().string().c_str() << std::endl;
+
+		        auto saving_time_start = std::chrono::high_resolution_clock::now();
                 img -> save(((std::string)argv[4] + (std::string)"/" + fname).c_str());
                 auto saving_time_end = std::chrono::high_resolution_clock::now() - saving_time_start;
                 auto saving_time = std::chrono::duration_cast<std::chrono::microseconds>(saving_time_end).\
                                    count();
                 SAVING_TIME.push_back(saving_time);
 
-		std::cout << "Saved " << path.path().string().c_str() << std::endl;
+		        std::cout << "Saved " << path.path().string().c_str() << std::endl;
 
                 PROCESSED_IMAGES += 1;
                 std::this_thread::sleep_for(std::chrono::microseconds(delay));
 
-		std::cout << "Updated counter" << std::endl;
+        		std::cout << "Updated counter" << std::endl;
 
-		delete img;
+                if (img == NULL) {
+                    std::cout << "Null pointer" << std::endl;
+                }
 
-		std::cout << "Deleted pointer" << std::endl;
+        		delete img;
 
-		std::cout << "Ok " << path.path().string().c_str() << std::endl;
+        		std::cout << "Deleted pointer" << std::endl;
+
+        		std::cout << "Ok " << path.path().string().c_str() << std::endl;
             }
         }
     } else {

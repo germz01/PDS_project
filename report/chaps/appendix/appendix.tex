@@ -1,0 +1,42 @@
+\chapter{How to run the program} % (fold)
+\label{cha:how_to_run_the_program}
+    \pagenumbering{Roman}
+    \setcounter{page}{2}
+    As stated in chapter \ref{cha:performance_modeling}, there are two versions of the program implementing
+    the watermarking project. Both versions can be runned via the main executable produced by the compilation
+    via \textit{make}, or using the Python script for the performances' measurement. The command for the
+    first kind of execution is the following:
+
+    \begin{minted}[bgcolor=LightGray,fontsize=\scriptsize]{bash}
+        ./main <images-directory> <watermark-file> <parallelism-degree> <output-directory> <delay>
+    \end{minted}
+
+    The second kind of execution is a bit more complex, but the script itself provides all the informations
+    in order to safely run the simulation.
+
+    \begin{minted}[bgcolor=LightGray,fontsize=\scriptsize]{bash}
+        usage: extract_results.py [-h] [-e {standard,fastflow}] [-i IMAGEDIR]
+                      [-w WATERMARK] [-o OUTPUTDIR] [-l LOOP] [-d DELAY]
+                      [-n NAME]
+
+        This script collects data about the execution time of the main program.
+
+        optional arguments:
+          -h, --help            show this help message and exit
+          -e {standard,fastflow}, --executable {standard,fastflow}
+                                Which executable should be tested.
+          -i IMAGEDIR, --imagedir IMAGEDIR
+                                The path leading to the directory containing the
+                                images.
+          -w WATERMARK, --watermark WATERMARK
+                                The path leading to the watermark file.
+          -o OUTPUTDIR, --outputdir OUTPUTDIR
+                                The path leading to the output directory
+          -l LOOP, --loop LOOP  Number of iterations the main program have to be
+                                executed.
+          -d DELAY, --delay DELAY
+                                The delay represents the time that the emitter have to
+                                wait before sending a new image into the stream.
+          -n NAME, --name NAME  Name of the file in which the results will be saved.
+    \end{minted}
+% chapter how_to_run_the_program (end)

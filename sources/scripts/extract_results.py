@@ -12,12 +12,29 @@ start = 0
 t_par_1 = 0.0
 t_seq = 0.0
 
+
+def check_path(possible_path):
+    if os.path.exists(possible_path):
+        return possible_path
+    else:
+        raise argparse.ArgumentTypeError(possible_path + ' IS A NOT VALID')
+
+
 parser = argparse.ArgumentParser(description="This script collects data" +
                                  " about the execution time of the main " +
                                  "program.")
 parser.add_argument('-e', '--executable', type=str, choices=['standard',
                     'fastflow'], default='standard',
                     help='Which executable should be tested.')
+parser.add_argument('-i', '--imagedir', type=check_path,
+                    default='../imgs', help='The path leading to the '
+                    'directory containing the images.')
+parser.add_argument('-w', '--watermark', type=check_path,
+                    default='../watermark.jpg', help='The path leading to the'
+                    ' watermark file.')
+parser.add_argument('-o', '--outputdir', type=check_path,
+                    default='../output_dir', help='The path leading to the'
+                    ' output directory')
 parser.add_argument('-l', '--loop', type=int, default=10,
                     help='Number of iterations the main program' +
                     ' have to be executed.')
@@ -48,14 +65,8 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
 
         print 'TESTING FOR PARALLELISM DEGREE ' + str(pd)
 
-        cmd = list()
-
-        if args['executable'] == 'standard':
-            cmd = ['./main', '../imgs', '../watermark.jpg', str(pd),
-                   '../output_dir', str(args['delay'])]
-        else:
-            cmd = ['./main', '../../imgs', '../../watermark.jpg', str(pd),
-                   '../../output_dir', str(args['delay'])]
+        cmd = ['./main', args['imagedir'], args['watermark'], str(pd),
+               args['outputdir'], str(args['delay'])]
 
         out = subprocess.check_output(cmd)
         out = out.split('\n')

@@ -1,6 +1,7 @@
 access.txt
 .DS_Store
 output_dir*
+report/_minted-main/
 report/*.aux
 report/*.fdb_latexmk
 report/*.fls

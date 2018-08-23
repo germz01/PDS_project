@@ -5,15 +5,16 @@
 \usepackage{helvet}
 \usepackage[a4paper,width=180mm,top=20mm,bottom=20mm,bindingoffset=6mm]{geometry}
 \usepackage[framemethod=default]{mdframed}
-\usepackage{lipsum,titlesec,xcolor,fancyhdr,array,multicol,float,graphicx,wrapfig,subcaption}
+\usepackage{lipsum,titlesec,fancyhdr,array,multicol,float,graphicx,wrapfig,subcaption}
 \usepackage{fontspec,todonotes,enumitem,comment,capt-of,amsmath,booktabs}
 \usepackage[colorlinks]{hyperref}
 \usepackage[font=scriptsize]{caption}
 \usepackage[Sonny]{fncychap}
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta}
+\usepackage{xcolor}
 \usepackage[sorting=none]{biblatex}
-\addbibresource{references.bib}
+\usepackage{minted}
+\usepackage[toc,page]{appendix}
 
 \renewcommand{\familydefault}{\sfdefault}
 
@@ -27,6 +28,11 @@
     urlcolor= black
 }
 
+\usetikzlibrary{arrows.meta}
+\addbibresource{references.bib}
+\usemintedstyle{bw}
+
+\definecolor{LightGray}{HTML}{F0F0F0}
 
 \begin{document}
     \input{chaps/titlepage/titlepage}
@@ -36,5 +42,10 @@
     \input{chaps/2/2}
     \input{chaps/3/3}
     \input{chaps/4/4}
+
+    \begin{appendices}
+        \input{chaps/appendix/appendix}
+    \end{appendices}
+
     \printbibliography[title={References}]
 \end{document}

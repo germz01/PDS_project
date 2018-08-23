@@ -2,32 +2,34 @@
 \label{cha:parallel_architecture_design}
     \pagenumbering{arabic}
     In this first chapter I'll describe the details regarding the \textbf{parallel architecture design} of
-    the Image \textit{watermarking} project. In order to follow a certain criterion in the decisions
-    for designing a parallel application, I've followed Figure $6.2$ of \cite{DSPM}, and, in general, the
+    the Image \textit{watermarking} project. In order to follow a certain criterion during the design of a
+    parallel application, I've followed Figure $6.2$ of \cite{DSPM}, and, in general, the
     concepts of chapter $6$. In Figure \ref{fig:parallel_architecture} you can see a representation of the
     parallel architecture that will be described in the following sections.
 
     \section{Task definition} % (fold)
     \label{sec:task_definition}
         One of the most important choices to be taken during the design of a parallel application consist in the
-        definition of what has to be considered as the smaller unit of work for the processes involved in the
-        computation, namely, the definition of what a \textbf{task} is. For the Image watermarking project, I've
-        chosen to consider each image that has to be processed as a distinct task. This decision, as expected, is
-        meaningful for the design of all the aspects that will be described in the next sections.
+        definition of what has to be considered as the smallest unit of work for the processes involved in the
+        computation, that is, the definition of what a \textbf{task} is. For the Image watermarking project,
+        I've chosen to consider each image that has to be processed as a distinct task. Actually, each image is
+        coupled with some additional informations, in order to ease the workers in the processing phase. More
+        details are provided in chapter \ref{cha:implementation_structure_and_implementation_details}.
     % section task_definition (end)
 
     \section{Finding concurrency design space} % (fold)
     \label{sec:finding_concurrency_design_space}
-        Following the order given by Figure $6.2$, and keeping in mind what a task is in the context of the
-        watermarking project, the next step, in the \textit{finding concurrency} design phase, consist in
-        selecting the \textbf{decomposition} and \textbf{dependency analysis} pattern to apply in the parallel
-        application. For the former, I've chosen the \textit{task decomposition} pattern, remaining coherent with
-        the task definition, and for the latter I've chosen the \textit{data sharing} pattern. The task
-        decomposition pattern models the division of a complex application in a set of tasks, which in this case
-        are represented by the images, while the data sharing pattern models the accesses to a shared data
-        structure, which in this case is represented by a standard vector containing the absolute paths to the
-        images (that are contained in a directory which is given in input by the user). The vector is accessed
-        concurrently by the processes, and each process works on a different portion of the vector.
+        Following the order given by Figure $6.2$ of \cite{DSPM}, and keeping in mind what a task is in the
+        context of the watermarking project, the next step, in the \textit{finding concurrency} design phase,
+        consist in selecting the \textbf{decomposition} and \textbf{dependency analysis} pattern to apply in the
+        parallel application. For the former, I've chosen the \textit{task decomposition} pattern, remaining
+        coherent with the task definition, and for the latter I've chosen the \textit{data sharing} pattern.
+        The task decomposition pattern models the division of a complex application in a set of tasks, which in
+        this case are represented by the images, while the data sharing pattern models the accesses to a shared
+        data structure, which in this case is represented by a queue containing the tasks, which mimics a
+        \textbf{stream of images}. This queue is accessed concurrently by the processes, and each
+        process retrieves a single task per access. Again, more details on the implementation are provided
+        will be provided in chapter \ref{cha:implementation_structure_and_implementation_details}.
     % section finding_concurrency_design_space (end)
 
     \section{Algorithm structure design space} % (fold)
@@ -35,74 +37,82 @@
         In order to figure out a parallel program structure closer to an actual parallel program, what is been
         decided in sections \ref{sec:task_definition} and \ref{sec:finding_concurrency_design_space} is refined
         in the \textit{algorithm structure} design space. I've decided to organize the parallel algorithm
-        \textit{by task}, and, in particular, using the \textit{task parallelism} pattern, giving to every
-        process that works on the vector containing the images an egual number of tasks, which, quite trivially,
-        is obtained by the formula
-
-        \begin{equation*}
-             \mathit{workload} = \frac{\mathit{\# images}}{parallelism \ degree}.
-        \end{equation*}
-
-        If the number of images to be processed is not divisible by the parallelism degree, the remaining images
-        are processed, one by one, by the processes, which this time access the vector using a mutex and extract
-        the image's path in a "FIFO-fashion".
+        \textit{by task}, and, in particular, using the \textit{task parallelism} pattern, since, as it is
+        imaginable by reading the past sections, every task is \textbf{independent} by itself. The following
+        scheduling is used:
+        \begin{enumerate}
+            \item A (master) process is in charge of loading the images taken from a directory which is given in
+            input by the user. Every image is then pushed into the stream queue, with a certain delay, also
+            given in input by the user. The entire procedure is builded in order to simulate a stream channel
+            that outputs images.
+            \item A (worker) process, concurrently with the other (worker) processes, pops out a task from the stream queue.
+            \item The process apply the watermark on the image retrieved from the queue.
+            \item Finally, the process saves the image, with the watermark applied on it, in an output
+            directory, which is given in input by the user.
+        \end{enumerate}
+        It is important to keep in mind that steps 1 and 2 (and, obviously steps 3 and 4) are performed
+        concurrently. A process that is waiting for the queue to be available will be awoken as soon as a new
+        image is loaded into the stream, as will be described in chapter
+        \ref{cha:implementation_structure_and_implementation_details}. In Figure \ref{fig:parallel_architecture}
+        you can see a graphic representation of the described scheduling.
     % section algorithm_structure_design_space (end)
 
     \section{Supporting structures design space} % (fold)
     \label{sec:supporting_structures_design_space}
-        In the \textit{supporting structures} design space the structures, that is, the
+        In the \textit{supporting structures design space} the structures, that is, the
         patterns, suitable to support the implementation of the algorithms planned in section
         \ref{sec:algorithm_structure_design_space} are investigated. Among the two available choices,
         the \textit{data structures} and the \textit{program structures}, I've chosen the latter, and, in
-        particular, the well known \textit{Master/Worker} pattern, which models the concurrent execution of a
+        particular, the well known \textbf{Master/Worker} pattern, which models the concurrent execution of a
         \textit{bag of tasks} on a collection of identical workers. In the context of the watermarking project,
-        the master is represented by the main process, which defines the workload to be assigned to each worker
-        and performs all the necessary computations in order to assign the correct set of indexes to make the
-        workers safely access the vector in a concurrent way, and the workers are represented by a set of
-        threads that all execute the same function, which accesses the image vector and, for every path that is
-        assigned by the master, apply the watermark (given in input by the user). As outlined in section
-        \ref{sec:algorithm_structure_design_space}, every worker try to process the remaining images in a
-        FIFO-fashion.
+        the master is represented by the main process, which loads the images from the image directory,
+        composes an object coupling the loaded image with other informations and
+        pushes the resulting task into the stream queue, and the workers are represented by a set of
+        threads that all execute the same function, which accesses the stream queue and, after retrieving a
+        \textit{task}, apply the watermark (given in input by the user) and finally saves the modified image
+        into the output directory.
     % section supporting_structures_design_space (end)
 
     \section{Implementation mechanisms design space} % (fold)
     \label{sec:implementation_mechanisms_design_space}
-        In this final section I describe the design space which models the mechanisms needed to support the
+        Finally, I describe the design space which models the mechanisms needed to support the
         parallel computing abstractions typical of parallel programming, that is, the \textit{implementation
-        mechanisms} design space. I've chosen to use the \textit{synchronization} pattern, since the use of
-        locks and mutexes is necessary to guarantee the sequential access to the image vector during the final
-        phase of the function used to apply the watermark.
+        mechanisms} design space. In order to guarantee a safe access to the stream queue, I've chosen to put a
+        mutex on it. The worker that try to access the queue while it is in use by another worker will by
+        blocked, and will wait till the queue become available again. This is the only shared data
+        structure that is present in the program; all the other activities take place concurrently without
+        interfering with eachother. As explained in the past sections, since the task are independent, in this
+        particular case the worker don't need to communicate, the only kind of "synchronizations" consist in
+        checking if the stream queue is empty or not.
 
         \begin{figure}[t]
         \centering
             \begin{tikzpicture}
                 \begin{scope}[every node/.style={circle,thick,draw}]
-                    \node (A) at (0,0) {master};
-                    \node (C) at (3,2) {worker};
-                    \node (D) at (3,-2) {worker};
+                    \node (A) at (-1,0) {master};
+                    \node (C) at (6,1.5) {worker};
+                    \node (D) at (6,-1.5) {worker};
                 \end{scope}
 
-                \node[rectangle,thick,draw] (E) at (7,0) {\rotatebox{90}{image vector}};
-                \node[rectangle,thick,draw] (F) at (-3,0) {\rotatebox{90}{watermark}};
+                \node[rectangle,thick,draw] (F) at (-4,0) {\rotatebox{90}{watermark}};
                 \node[rectangle,thick,draw] (G) at (9,0) {\rotatebox{90}{output directory}};
+                \node[rectangle,thick,draw] (H) at (-3, 3) {image directory};
+                \node[rectangle,thick,draw] (I) at (2, 0) {stream};
 
                 \begin{scope}[>={Stealth[black]},every node/.style={fill=white,circle},
                 every edge/.style={draw=black,very thick}]
-                    \path [->] (A) edge node {task} (C);
-                    \path [->] (A) edge node {task} (D);
-                    \path [->] (A) edge node {retrieves} (F);
-                    \path [->] (C) edge node {access} (E);
-                    \path [->] (C) edge[bend left=30] node {saves} (G);
-                    \path [->] (D) edge node {access} (E);
-                    \path [->] (D) edge[bend right=30] node {saves} (G);
+                    \path [->] (A) edge node {\footnotesize retrieves} (F);
+                    \path [->] (C) edge[bend left=30] node {\footnotesize saves} (G);
+                    \path [->] (D) edge[bend right=30] node {\footnotesize saves} (G);
+                    \path [->] (A) edge node {\footnotesize retrieves} (H);
+                    \path [->] (A) edge node {\footnotesize inserts} (I);
+                    \path [->] (C) edge node {\footnotesize retrieves} (I);
+                    \path [->] (D) edge node {\footnotesize retrieves} (I);
                 \end{scope}
+
+                \path (C) -- (D) node [black, font=\LARGE, midway, sloped] {$\dots$};
         \end{tikzpicture}
-        \caption{Representation of the parallel architecture described in this chapter. As we can see, the
-        master thread sends a task to every worker. In the context of the watermark project, a task is
-        represented by a set of indexes which are used by the workers in order to access the vector
-        containing the absolute paths to the images. Together with the indexes the master thread also sends
-        a pointer to the watermark, which is used by the workers. Once the workers have ended their
-        computations, they save the new images in a output directory, given in input by the user.}
+        \caption{Representation of the parallel architecture described in this chapter.}
         \label{fig:parallel_architecture}
         \end{figure}
 

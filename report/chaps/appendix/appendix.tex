@@ -1,7 +1,5 @@
 \chapter{How to run the program} % (fold)
 \label{cha:how_to_run_the_program}
-    \pagenumbering{Roman}
-    \setcounter{page}{2}
     As stated in chapter \ref{cha:performance_modeling}, there are two versions of the program implementing
     the watermarking project. Both versions can be runned via the main executable produced by the compilation
     via \textit{make}, or using the Python script for the performances' measurement. The command for the
@@ -11,6 +9,15 @@
         ./main <images-directory> <watermark-file> <parallelism-degree> <output-directory> <delay>
     \end{minted}
 
+    Where \texttt{<images-directory>} is the path leading to the directory containing the images to be processed,
+    \texttt{<watermark-file>} is the path leading to the watermark image, \texttt{<parallelism-degree>} is the
+    number of workers to use in the parallel version of the standard implementation, or in the fastflow one,
+    \texttt{<output-directory>} is the path leading to the directory in which the images have to be saved and
+    finally \texttt{delay} represents the amout of time, in microseconds, between the two insertions in the stream
+    queue, as described in chapter \ref{cha:implementation_structure_and_implementation_details}.
+    If you want to execute the standard version's sequential implementation, you have to insert $0$ as
+    parallelism degree while being in the directory containing the standard version's compiled file (you can
+    find the project's directory tree in Figure \ref{fig:directory_tree}). \\
     The second kind of execution is a bit more complex, but the script itself provides all the informations
     in order to safely run the simulation.
 
@@ -38,5 +45,17 @@
                                 The delay represents the time that the emitter have to
                                 wait before sending a new image into the stream.
           -n NAME, --name NAME  Name of the file in which the results will be saved.
+    \end{minted}
+
+    Here is a typical output provided by the execution of the standard/fastflow program's version.
+
+    \begin{minted}[bgcolor=LightGray,fontsize=\scriptsize]{bash}
+        PARALLELISM DEGREE: 0
+        COMPLETION TIME: 7560410 μs
+        MEAN LATENCY: 234.884 μs
+        MEAN LOADING TIME: 72277.7 μs
+        MEAN SAVING TIME: 101028 μs
+        MEAN CREATION TIME: nan μs
+        PROCESSED IMAGES: 43
     \end{minted}
 % chapter how_to_run_the_program (end)

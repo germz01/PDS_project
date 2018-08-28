@@ -156,7 +156,7 @@ int main(int argc, char const *argv[]) {
 
     std::cout << "\nPARALLELISM DEGREE: " << par_degree << std::endl;
     std::cout << "COMPLETION TIME: " << completion_time << " \u03BCs" << std::endl;
-    std::cout << "MEAN LATENCY: " << stats("mean", std::ref(LATENCIES)) << " \u03BCs" << std::endl;
+    std::cout << "MEAN PROCESSING TIME: " << stats("mean", std::ref(LATENCIES)) << " \u03BCs" << std::endl;
     std::cout << "MEAN LOADING TIME: " << stats("mean", std::ref(LOADING_TIME)) << " \u03BCs" << std::endl;
     std::cout << "MEAN SAVING TIME: " << stats("mean", std::ref(SAVING_TIME)) << " \u03BCs" << std::endl;
     std::cout << "MEAN CREATION TIME: " << stats("mean", std::ref(CREATION_TIME)) << " \u03BCs" << std::endl;

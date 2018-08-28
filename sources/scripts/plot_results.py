@@ -23,7 +23,8 @@ for l in paths:
 
         plt.title(field + ' PER PARALLELISM DEGREE')
         plt.xlabel('PARALLELISM DEGREE')
-        plt.ylabel(field + r' ($\mu$ SECONDS)')
+        plt.ylabel(field + r' ($\mu$ SECONDS)' if field == 'COMPLETION TIME'
+                   else field)
         plt.grid()
         plt.legend()
         plt.tight_layout()

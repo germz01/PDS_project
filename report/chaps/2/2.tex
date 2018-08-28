@@ -75,7 +75,8 @@
             \textbf{completion time} with the formula:
 
             \begin{equation}
-                T_C = \mathit{max} \left \{ \frac{T_p + T_s}{n_w}, T_l \right \},
+                T_C = \mathit{max} \left \{ \frac{T_p + T_s}{n_w}, T_l + d \right \},
+                \label{eq:completion_time_parallel}
             \end{equation}
 
             where $n_w$ represents the number of workers, that is, the number of threads that are concurrently

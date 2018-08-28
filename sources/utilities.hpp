@@ -7,6 +7,7 @@
 #include <numeric>
 #include <string>
 #include <vector>
+#include <iostream>
 
 using namespace cimg_library;
 namespace fs = std::experimental::filesystem;
@@ -29,6 +30,8 @@ std::condition_variable cv;
 
 std::vector<double> LATENCIES, LOADING_TIME, SAVING_TIME, CREATION_TIME;
 
+int W_WIDTH, W_HEIGHT;
+
 void parse_watermark(std::vector<point_t>& vect, CImg<unsigned char>& watermark) {
     int current_index = 0;
 
@@ -44,6 +47,9 @@ void parse_watermark(std::vector<point_t>& vect, CImg<unsigned char>& watermark)
             }
         }
     }
+
+    W_WIDTH = watermark.width();
+    W_HEIGHT = watermark.height();
 }
 
 void check_output_dir(std::string path) {
@@ -66,8 +72,11 @@ double stats(std::string statistic, std::vector<double>& vect) {
 
 void apply_watermark(CImg<unsigned char>& image, std::vector<point_t>& black_pixels) {
     for (point_t pixel : black_pixels) {
-            image(pixel.x, pixel.y, 0, 0) = 0;
-            image(pixel.x, pixel.y, 0, 1) = 0;
-            image(pixel.x, pixel.y, 0, 2) = 0;
-        }
+        int x = (pixel.x * image.width()) / W_WIDTH;
+        int y = (pixel.y * image.height()) / W_HEIGHT;
+
+        image(x, y, 0, 0) = 0;
+        image(x, y, 0, 1) = 0;
+        image(x, y, 0, 2) = 0;
+    }
 }

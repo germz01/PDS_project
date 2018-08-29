@@ -2,19 +2,19 @@
 \label{cha:parallel_architecture_design}
     \pagenumbering{arabic}
     In this first chapter I'll describe the details regarding the \textbf{parallel architecture design} of
-    the Image \textit{watermarking} project. In order to follow a certain criterion during the design of a
-    parallel application, I've followed Figure $6.2$ of \cite{DSPM}, and, in general, the
+    the Image \textit{watermarking} project. In order to follow a certain criterion during the design phase,
+    I've followed Figure $6.2$ of \cite{DSPM}, and, in general, the
     concepts of chapter $6$. In Figure \ref{fig:parallel_architecture} you can see a representation of the
     parallel architecture that will be described in the following sections.
 
     \section{Task definition} % (fold)
     \label{sec:task_definition}
-        One of the most important choices to be taken during the design of a parallel application consist in the
-        definition of what has to be considered as the smallest unit of work for the processes involved in the
+        One of the most important choices to be taken during the design of a parallel application consist in
+        defining what has to be considered as the smallest unit of work for the processes involved in the
         computation, that is, the definition of what a \textbf{task} is. For the Image watermarking project,
         I've chosen to consider each image that has to be processed as a distinct task. Actually, each image is
         coupled with some additional informations, in order to ease the workers in the processing phase. More
-        details are provided in chapter \ref{cha:implementation_structure_and_implementation_details}.
+        details about this are provided in chapter \ref{cha:implementation_structure_and_implementation_details}.
     % section task_definition (end)
 
     \section{Finding concurrency design space} % (fold)
@@ -27,9 +27,9 @@
         The task decomposition pattern models the division of a complex application in a set of tasks, which in
         this case are represented by the images, while the data sharing pattern models the accesses to a shared
         data structure, which in this case is represented by a queue containing the tasks, which mimics a
-        \textbf{stream of images}. This queue is accessed concurrently by the processes, and each
-        process retrieves a single task per access. Again, more details on the implementation
-        will be provided in chapter \ref{cha:implementation_structure_and_implementation_details}.
+        \textbf{stream of images}. The processes retrieves one single task every time they access the queue.
+        Again, more details on the implementation will be provided in chapter
+        \ref{cha:implementation_structure_and_implementation_details}.
     % section finding_concurrency_design_space (end)
 
     \section{Algorithm structure design space} % (fold)
@@ -53,8 +53,8 @@
         It is important to keep in mind that steps 1 and 2 (and, obviously steps 3 and 4) are performed
         concurrently. A process that is waiting for the queue to be available will be awoken as soon as a new
         image is loaded into the stream, as will be described in chapter
-        \ref{cha:implementation_structure_and_implementation_details}. In Figure \ref{fig:parallel_architecture}
-        you can see a graphic representation of the described scheduling.
+        \ref{cha:implementation_structure_and_implementation_details}. The scheduling described in this section
+        is represented in Figure \ref{fig:parallel_architecture}.
     % section algorithm_structure_design_space (end)
 
     \section{Supporting structures design space} % (fold)
@@ -79,11 +79,12 @@
         parallel computing abstractions typical of parallel programming, that is, the \textit{implementation
         mechanisms} design space. In order to guarantee a safe access to the stream queue, I've chosen to put a
         mutex on it. The worker that try to access the queue while it is in use by another worker will by
-        blocked, and will wait till the queue become available again. This is the only shared data
-        structure that is present in the program; all the other activities take place concurrently without
-        interfering with eachother. As explained in the past sections, since the task are independent, in this
-        particular case the worker don't need to communicate, the only kind of "synchronizations" consist in
-        checking if the stream queue is empty or not.
+        blocked, and will wait till the queue become available again. This kind of choice will influence the
+        final performances by introducing some overhead, as explained in \cite{DSPM} and \cite{spp}.
+        This is the only shared data structure that is present in the program; all the other activities take
+        place concurrently without interfering with eachother. As explained in the past sections, since the task
+        are independent, in this particular case the worker don't need to communicate, the only kind of
+        "synchronizations" consist in checking if the stream queue is empty or not.
 
         \begin{figure}[t]
         \centering

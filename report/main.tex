@@ -6,16 +6,12 @@
 \usepackage[a4paper,width=180mm,top=20mm,bottom=20mm,bindingoffset=6mm]{geometry}
 \usepackage[framemethod=default]{mdframed}
 \usepackage{lipsum,titlesec,fancyhdr,array,multicol,float,graphicx,wrapfig,subcaption}
-\usepackage{fontspec,todonotes,enumitem,comment,capt-of,amsmath,booktabs}
+\usepackage{fontspec,todonotes,enumitem,comment,capt-of,amsmath,booktabs,dirtree,minted,tikz,xcolor}
 \usepackage[colorlinks]{hyperref}
 \usepackage[font=scriptsize]{caption}
 \usepackage[Sonny]{fncychap}
-\usepackage{tikz}
-\usepackage{xcolor}
 \usepackage[sorting=none]{biblatex}
-\usepackage{minted}
 \usepackage[toc,page]{appendix}
-\usepackage{dirtree}
 
 \renewcommand{\familydefault}{\sfdefault}
 
@@ -48,5 +44,5 @@
         \input{chaps/appendix/appendix}
     \end{appendices}
 
-    \printbibliography[title={References}]
+    \printbibliography[heading=bibintoc,title={References}]
 \end{document}

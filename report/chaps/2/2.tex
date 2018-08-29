@@ -1,35 +1,36 @@
 \chapter{Performance modeling} % (fold)
 \label{cha:performance_modeling}
     In this chapter I'll describe the choices I made to model the \textbf{performance} of the code implementing
-    the watermarking project, following the concepts and using the terminology described in \cite{DSPM}, chapter
-    $5$.
+    the watermarking project, following the concepts and using the terminology of \cite{DSPM}, chapter
+    $5$, and \cite{spp}, chapter $2$. I'll also spend some words about the path I followed to collect the
+    data for the models' verification.
     \section{Parameters' selection} % (fold)
     \label{sec:parameters}
         First things first, for defining the building blocks of the performance model for the image
         watermarking project, I've chosen the \textit{parameters} to be considered in order to shape the
         performance of the program. Having the goal of describing the program's performance in
         the most human-friendly way, I've chosen to consider the basic performance measures of interest in
-        parallel/distributed computing, that is, the \textbf{latency} ($L$), the \textbf{completion time}
-        ($T_C$), the \textbf{speedup} ($s(n)$), the \textbf{scalability}
-        ($\mathit{scalab}(n)$) and finally the \textbf{efficiency} ($\epsilon(n)$). A detailed explanation of
-        this measures can be founded in \cite{DSPM}, chapter 5.
+        parallel/distributed computing, that is, the \textbf{completion time} ($T_C$), the \textbf{speedup}
+        ($s(n)$), the \textbf{scalability} ($\mathit{scalab}(n)$) and finally the \textbf{efficiency}
+        ($\epsilon(n)$). For a detailed explanation of this parameters, see \cite{DSPM} and \cite{spp}.
     % section parameters (end)
 
     \section{Collecting the data} % (fold)
-    \label{sec:model_s_usage}
+    \label{sec:collecting_the_data}
         There are essentially two version of the program implementing the watermarking project: a
         \textbf{standard one}, which includes the sequential and parallel implementation implemented using only
         the functionalities provided by the C++ standard library, and a \textbf{fastflow one}, that includes only
-        the parallel implementation which uses the fastflow library \cite{fastflow}. Each one of the parallel
+        the parallel implementation which uses \cite{fastflow}. Each one of the parallel
         versions was tested using a parallelism degree that ranges from $1$ to $10$. Given the parameters to be
         observed, the data to conduct an analytical valuation of the program's performances was collected at run
-        time, using the utilities provided by the standard C++ library \textit{chrono}. I've used a Python
-        script to compute the measures of section \ref{sec:parameters} both for the standard and the fastflow
-        version. The results were then stored in four diffente csv files, two for the execution of the two
-        versions of the program on my laptop, a MacBook Pro, and two for the execution on the department's
-        machine. The results can bee founded in the \textbf{results} directory, on the project's
-        \href{https://github.com/germz01/PDS_project}{\textit{GitHub page}}.
-    % section model_s_usage (end)
+        time, using the utilities provided by the standard C++ library \textit{chrono}. The act of collecting the
+        data interferes with the overall computation by adding some overhead, that will influence the final
+        performances. I've used a Python script to compute the measures of section \ref{sec:parameters} both for
+        the standard and the fastflow version. The results were then stored in four diffente csv files, two for
+        the execution of the two versions of the program on my laptop, a MacBook Pro, and two for the execution
+        on the department's machine. The results can bee founded in the \textbf{results} directory, on the
+        project's \href{https://github.com/germz01/PDS_project}{\textit{GitHub page}}.
+    % section collecting_the_data (end)
 
     \section{Formalising the model} % (fold)
     \label{sec:formalising_the_model}
@@ -37,15 +38,15 @@
         program, I'll use some symbols:
         \begin{description}
             \item[$T_l$] represents the time taken to load an image from the image directory using the utilities
-            provided by the CImg library \cite{cimg}.
+            provided by \cite{cimg}.
             \item[$T_p$] represents the time taken to process, that is, to apply the watermark on an image.
             \item[$T_s$] represents the time taken to save an image in the output directory using the utilities
-            provided by the CImg library \cite{cimg}.
+            provided by \cite{cimg}.
             \item[$d$] represents the delay introduced between every image, in order to simulate the behavior of
             a stream of images.
-            \item[$n_i$] represents the number of images processed by the programs. For the sake of the
-            simulation we image that this number is unknown, but I want to introduce it anyway in the formulas
-            to give a better understanding of the performances.
+            \item[$n_i$] represents the number of images processed during at the end of the execution. For the
+            sake of the simulation we image that this number is unknown, but I want to introduce it anyway in the
+            formulas to give a better understanding of the performances.
         \end{description}
         \subsection{Sequential version} % (fold)
         \label{sub:sequential_version}
@@ -69,10 +70,10 @@
         \subsection{Parallel version} % (fold)
         \label{sub:parallel_version}
             For the parallel version of the program we have a slightly different situation. We can imagine the
-            master/worker pattern like a two-stage pipeline, in which the first stage is used to "load" the images
+            master/worker pattern like a two-stage pipeline, in which the first stage is used to load the images
             into the stream queue, and the second stage processes the images by first applying the watermark and
-            then saving the modified image into the output directory. So, we can represent the
-            \textbf{completion time} with the formula:
+            then saving the modified image into the output directory. The \textbf{completion time} can be
+            represented by the following formula:
 
             \begin{equation}
                 T_C = \mathit{max} \left \{ \frac{T_p + T_s}{n_w}, T_l + d \right \},
@@ -80,8 +81,11 @@
             \end{equation}
 
             where $n_w$ represents the number of workers, that is, the number of threads that are concurrently
-            processing the images loaded by the master thread, and, as a matter of fact, corresponds to the
-            parallelism degree given in input by the user.
+            processing the images loaded by the master thread, and, as a mat{}ter of fact, corresponds to the
+            parallelism degree given in input by the user. It has to be kept in mind that equation
+            \ref{eq:completion_time_parallel} abstracts from the (small) overheads introduced by the
+            mechanisms described in sections \ref{sec:implementation_mechanisms_design_space} and
+            \ref{sec:collecting_the_data}.
         % subsection parallel_version (end)
     % section formalising_the_model (end)
 

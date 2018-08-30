@@ -7,7 +7,8 @@
     to the parallelism degree. In order to verify that the models defined in chapter
     \ref{cha:performance_modeling} can be used to represent the evolution of the performances, I've used the
     data returned by every execution's output. You can see an example of output in appendix
-    \ref{sec:how_to_run_the_program}.
+    \ref{sec:how_to_run_the_program}, or on the project's
+    \href{https://github.com/germz01/PDS_project}{\textit{GitHub}} page.
     \section{Completion time} % (fold)
     \label{sec:completion_time}
         Figure \ref{fig:completion_time_standard} and \ref{fig:completion_time_fastflow} shows the progression
@@ -29,7 +30,7 @@
             As stated before, the completion time for the parallel execution is characterized by an initial
             decreasing and suddendly by a stabilization. As explained in chapter
             \ref{cha:implementation_structure_and_implementation_details}, this is because the functions for
-            loading and saving images (taken from \cite{cimg}) both represents a bottleneck for
+            loading and saving images taken from \cite{cimg} both represents a bottleneck for
             the overall computation. We can use the results provided by the various executions to assume that
             the parallel execution of the program follows the model described by equation
             \ref{eq:completion_time_parallel}, with the loading time, and the delay, representing the
@@ -44,15 +45,16 @@
         for both the machines. For the fastflow version, as for the completion time, the execution on my laptop
         presents a strange behavior. The standard version of the program, as we can see, runs twice as faster
         as the sequential one on the department's machine starting from parallelism degree $2$, while on my
-        laptop the speedup is approximately $1.5$. The fastflow version shows a slightly worse behavior on the
-        department's machine.
+        laptop the speedup is approximately $1.5$, remaining coherent with the results presented for the
+        completion time. The fastflow version shows a slightly worse behavior on the department's machine.
     % section speedup (end)
     \section{Scalability} % (fold)
     \label{sec:scalability}
         Figure \ref{fig:scalability_standard} and \ref{fig:scalability_fastflow} shows the progression for the
         scalability compared to the parallelism degree. The standard version of the program executed on my
         laptop presents a mean scalability eguals to $1.2$, while it is slightly higher on the department's
-        machine, with a value of $1.6$.
+        machine, with a value of $1.6$. Again, having seen the results proposed by the plots described in the
+        past sections, the results proposed by the scalability's analysis are coherent with the rest.
     % section scalability (end)
     \section{Efficiency} % (fold)
     \label{sec:efficiency}
@@ -117,13 +119,13 @@
             \caption{Fastflow}
             \label{fig:efficiency_fastflow}
         \end{subfigure}
-        \caption{Plots of the measures described in chapter \ref{cha:performance_modeling}. The standard
+        \caption{Plots describing the measures introduced in chapter \ref{cha:performance_modeling}. The standard
         version was tested with a parallelism degree that ranges from $0$ to $10$, while the fastflow one was
         tested with a parallelism degree that ranges from $1$ to $10$. The solid line represents an execution
         on my laptop, while the dotted line represents an execution on the department's machine. On every
-        plot's x-axis we can see the progression of the parallelism degree, where the $0$
-        value in the program's standard execution represents the sequential execution, while on every plot's
-        y-axis we can see the value of the measure for a particular parallelism degree.}
+        plot's x-axis we can see the progression of the parallelism degree, with $0$ representing
+        the sequential execution for the program's standard version, while on every plot's
+        y-axis we can see the measure's value for a particular parallelism degree.}
         \label{fig:performances}
     \end{figure}
     \newpage

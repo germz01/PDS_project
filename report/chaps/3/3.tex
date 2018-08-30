@@ -1,26 +1,28 @@
 \chapter{Implementation structure and implementation details} % (fold)
 \label{cha:implementation_structure_and_implementation_details}
     In this chapter I'll give some more technical details about the choices I've taken during the implementation
-    of the watermarking project.
+    phase of the watermarking project. For an in depth analysis of the implementation details see the code on the
+    project's \href{https://github.com/germz01/PDS_project}{\textit{GitHub}} page, or \cite{cpp}.
     \section{Directory tree} % (fold)
     \label{sec:directory_tree}
         The structure I've chosen to follow for my project is quite trivial, and it is represented in Figure
-        \ref{fig:directory_tree}. You can find the complete project on the
-        \href{https://github.com/germz01/PDS_project}{\textit{GitHub}} page.
+        \ref{fig:directory_tree}. See the \href{https://github.com/germz01/PDS_project}{\textit{GitHub}} page
+        for the complete project.
     % section directory_tree (end)
     \section{Task implementation} % (fold)
     \label{sec:task_implementation}
         As stated in chapter \ref{cha:parallel_architecture_design}, each task is composed by an image and some
         additional information. On the implementation side I've decided to represent a task by using a
         \texttt{struct image\_t} containing a pointer to the image to be processed and the image's name.
-        Inserting the image's name simplify the comparison between processed and unprocessed images.
+        Inserting the image's name simplify the comparison between processed and unprocessed images, and assures
+        the consistency between the names of the original image and the processed one.
     % section task_implementation (end)
     \section{Simulating the stream of images} % (fold)
     \label{sec:simulating_the_stream_of_images}
-        In order to simulating a stream of images, I've chosen to use a \texttt{std::deque}. While the emitter,
+        For simulating a stream of images, I've chosen to use a \texttt{std::deque}. While the emitter,
         that is, the master thread, inserts the tasks into the front of the queue, the workers extracts the tasks
         from the back of the queue, in a FIFO way. The \texttt{delay} parameter, given in input, is used to
-        simulate the time passing between two insertions (in microseconds). Being the queue a shared resource,
+        simulate the time passing between two insertions (in $\mu s$). Being the queue a shared resource,
         in order to insert/extract a task, it is mandatory to take the \texttt{lock} on the queue, which in my
         implementation it is represented by a \texttt{std::lock\_guard} for the emitter, and by a
         \texttt{std::unique\_lock} for the workers. A \texttt{std::condition\_variable} ensures that, if some
@@ -31,16 +33,16 @@
     \label{sec:applying_the_watermark}
         From the implementation point of view, every image is a $X{\times}Y$ matrix, being $X$ the image's wight
         and $Y$ the image's height. Every worker has a \texttt{std::vector<point\_t>} containing the coordinates
-        of every black point composing the watermark image, which is used during the watermark's application.
-        For every point contained in the vector, a black pixel is generated in the original image, and this
+        of every black pixel composing the watermark image, which is used during the watermark's application.
+        For every entry in the vector, a black pixel is generated in the original image, and this
         realizes the watermark's application.
     % section applying_the_watermark (end)
     \section{Loading and saving an image} % (fold)
     \label{sec:loading_and_saving_an_image}
-        The only functionalities I've used from the CImg library \cite{cimg} are the two functions for loading
+        The only functionalities I've taken from \cite{cimg} are the two functions for loading
         and saving an image. As I'll describe in chapter \ref{cha:experimental_validation}, this functions can
         be considered as the bottlenecks for both the standard and fastflow program's version. As you can see
-        from the sample of an output in appendix \ref{cha:how_to_run_the_program}, the functions for loading
+        from the sample of an output in appendix \ref{sec:how_to_run_the_program}, the functions for loading
         and saving an image are the ones that take the bigger part of the computation.
     % section loading_and_saving_an_image (end)
     \begin{figure}[b!]

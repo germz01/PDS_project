@@ -7,8 +7,14 @@
     to the parallelism degree. In order to verify that the models defined in chapter
     \ref{cha:performance_modeling} can be used to represent the evolution of the performances, I've used the
     data returned by every execution's output. You can see an example of output in appendix
-    \ref{sec:how_to_run_the_program}, or on the project's
-    \href{https://github.com/germz01/PDS_project}{\textit{GitHub}} page.
+    \ref{sec:how_to_run_the_program}.
+    \section{The test set} % (fold)
+    \label{sec:the_test_set}
+        As you can see in Figure \ref{fig:directory_tree}, in the project's directory tree there is a directory
+        named \texttt{imgs} which contains the images that were used to test the code for the watermarking
+        project. The directory contains $43$ $1024 \times 768$ images that were retrieved using Google Advance
+        Image Search.
+    % section the_test_set (end)
     \section{Completion time} % (fold)
     \label{sec:completion_time}
         Figure \ref{fig:completion_time_standard} and \ref{fig:completion_time_fastflow} shows the progression
@@ -31,10 +37,14 @@
             decreasing and suddendly by a stabilization. As explained in chapter
             \ref{cha:implementation_structure_and_implementation_details}, this is because the functions for
             loading and saving images taken from \cite{cimg} both represents a bottleneck for
-            the overall computation. We can use the results provided by the various executions to assume that
-            the parallel execution of the program follows the model described by equation
-            \ref{eq:completion_time_parallel}, with the loading time, and the delay, representing the
-            bottleneck for this kind of computation.
+            the overall computation. Observing the output sample I've provided in appendix
+            \ref{sec:output_example} we can see how much of the time taken to complete the execution belongs to
+            the utilities for loading and saving an image. Using different parallelism degrees we can see that
+            the propotions among the various activities performed during the computation remain similar.
+            Having the parallel execution of the program described by equation
+            \ref{eq:completion_time_parallel}, and using the results provided by the various execution, we
+            can assume that the loading time, and the delay, represent the bottleneck for this kind of
+            execution.
         % subsection parallel_model_s_validation (end)
     % section completion_time (end)
     \section{Speedup} % (fold)
@@ -136,5 +146,5 @@
     \end{figure}
     \newpage
     \pagenumbering{Roman}
-    \setcounter{page}{2}
+    \setcounter{page}{3}
 % chapter experimental_validation (end)

@@ -46,8 +46,8 @@
             given in input by the user. The entire procedure is builded in order to simulate a stream channel
             that outputs images.
             \item A (worker) process, concurrently with the other (worker) processes, pops out a task from the stream queue.
-            \item The process apply the watermark on the image retrieved from the queue.
-            \item Finally, the process saves the image, with the watermark applied on it, in an output
+            \item The processes apply the watermark on the images retrieved from the queue.
+            \item Finally, the processes saves the images, with the watermark applied on it, in an output
             directory, which is given in input by the user.
         \end{enumerate}
         It is important to keep in mind that steps 1 and 2 (and, obviously steps 3 and 4) are performed

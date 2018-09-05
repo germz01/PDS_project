@@ -82,8 +82,11 @@
 
             where $n_w$ represents the number of workers, that is, the number of threads that are concurrently
             processing the images loaded by the master thread, and, as a mat{}ter of fact, corresponds to the
-            parallelism degree given in input by the user. It has to be kept in mind that equation
-            \ref{eq:completion_time_parallel} abstracts from the (small) overheads introduced by the
+            parallelism degree given in input by the user. We can consider $T_p + T_s$ as the \textbf{latency}
+            for the parallel version of the program, that is, the time spent between the moment a given
+            activity receives input data and the moment the same activity delivers the output data
+            corresponding to the input. It has to be kept in mind that equation
+            \ref{eq:completion_time_parallel} abstracts from the overheads introduced by the
             mechanisms described in sections \ref{sec:implementation_mechanisms_design_space} and
             \ref{sec:collecting_the_data}.
         % subsection parallel_version (end)

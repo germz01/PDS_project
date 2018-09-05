@@ -1,25 +1,52 @@
 \chapter{Various} % (fold)
 \label{cha:various}
+    \section{How to compile the program} % (fold)
+    \label{sec:how_to_compile_the_program}
+        For compiling both the versions implementing the watermarking project it is sufficient to run the
+        \texttt{make} command in the \texttt{source} directory if you want to compile the version using only the
+        standard C$++$ library functionalities, or in the \texttt{source\_ff} directory if you want to compile
+        the version using fastflow.
+    % section how_to_compile_the_program (end)
     \section{How to run the program} % (fold)
     \label{sec:how_to_run_the_program}
         As stated in chapter \ref{cha:performance_modeling}, there are two versions of the program implementing
-        the watermarking project. Both versions can be runned via the main executable produced by the compilation
-        via \textit{make}, or using the Python script for the performances' measurement.
+        the watermarking project. Both versions can be runned via the \texttt{main} executable produced by the
+        compilation via \textit{make}, or using the Python script for the performances' measurement.
         \subsection{Standard execution} % (fold)
         \label{sub:standard_execution}
-            The command for the first kind of execution is the following:
+            For the standard execution, navigate to the \texttt{source} directory if you want to launch the
+            program implemented with only the standard C$++$ library functionalities, or navigate to the
+            \texttt{source\_ff} directory if you want to launch the program implemented using fastflow.
+            For both the executions, the command is the following:
 
             \begin{minted}[bgcolor=LightGray,fontsize=\scriptsize]{bash}
                 ./main <images-directory> <watermark-file> <parallelism-degree> <output-directory> <delay>
             \end{minted}
 
-            Where \texttt{<images-directory>} is the path leading to the directory containing the images to be
-            processed, \texttt{<watermark-file>} is the path leading to the watermark image,
-            \texttt{<parallelism-degree>} is the number of workers to use in the parallel version of the standard
-            implementation, or in the fastflow one, \texttt{<output-directory>} is the path leading to the
-            directory in which the images have to be saved and finally \texttt{<delay>} represents the amout of
-            time, in $\mu s$, between the two insertions in the stream queue, as described in chapter
-            \ref{cha:implementation_structure_and_implementation_details}.
+            Where:
+            \begin{description}
+                \item[\texttt{<image-directory>}] is the path leading to the directory containing the images to
+                be processed;
+                \item[\texttt{<watermark-file>}] is the path leading to the watermark image;
+                \item[\texttt{<parallelism-degree>}] is the number of workers to use in the parallel version of
+                the standard implementation, or in the fastflow one;
+                \item[\texttt{<output-directory>}] is the path leading to the directory in which the images
+                have to be saved;
+                \item[\texttt{<delay>}] represents the amout of time, in $\mu s$, between two insertions in the
+                stream queue, as described in chapter
+                \ref{cha:implementation_structure_and_implementation_details};
+            \end{description}
+            Here is an example for the standard C++ library execution:
+
+            \begin{minted}[bgcolor=LightGray,fontsize=\scriptsize]{bash}
+                ./main ../imgs/ ../watermark.jpg 1 ../output_dir/ 100
+            \end{minted}
+
+            And here is one for the fastflow execution:
+
+            \begin{minted}[bgcolor=LightGray,fontsize=\scriptsize]{bash}
+                ./main ../../imgs/ ../../watermark.jpg 1 ../../output_dir/ 100
+            \end{minted}
         % subsection standard_execution (end)
         \subsection{Python execution} % (fold)
         \label{sub:python_execution}

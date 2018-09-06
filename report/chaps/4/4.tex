@@ -6,8 +6,8 @@
     computing point of view. Figure \ref{fig:performances} represents the progress of every measure compared
     to the parallelism degree. In order to verify that the models defined in chapter
     \ref{cha:performance_modeling} can be used to represent the evolution of the performances, I've used the
-    data returned by every execution's output. You can see an example of output in appendix
-    \ref{sec:how_to_run_the_program}.
+    data returned by every execution's output. You can see an output sample in appendix
+    \ref{sec:output_example}.
     \section{The test set} % (fold)
     \label{sec:the_test_set}
         As you can see in Figure \ref{fig:directory_tree}, in the project's directory tree there is a directory
@@ -29,7 +29,7 @@
             reported result follows the model described by equation \ref{eq:completion_time_sequential}. Having
             the time taken to process an image represented by equation \ref{eq:sequential}, the summation over
             the number of processed images gives us the total completion time taken by the sequential execution
-            of the program.
+            of the program, which is represented by the parallelism degree $0$.
         % subsection sequential_model_s_validation (end)
         \subsection{Parallel model's validation} % (fold)
         \label{sub:parallel_model_s_validation}
@@ -43,7 +43,7 @@
             the propotions among the various activities performed during the computation remain similar.
             Having the parallel execution of the program described by equation
             \ref{eq:completion_time_parallel}, and using the results provided by the various execution, we
-            can assume that the loading time, and the delay, represent the bottleneck for this kind of
+            can assume that the loading time, represent the bottleneck for this kind of
             execution.
         % subsection parallel_model_s_validation (end)
     % section completion_time (end)

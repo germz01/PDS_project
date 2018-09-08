@@ -5,7 +5,10 @@
         For compiling both the versions implementing the watermarking project it is sufficient to run the
         \texttt{make} command in the \texttt{source} directory if you want to compile the version using only the
         standard C$++$ library functionalities, or in the \texttt{source\_ff} directory if you want to compile
-        the version using fastflow.
+        the version using fastflow. In order to compile the fastflow version on your machine, it is mandatory
+        to have the \texttt{fastflow-master} directory, which can be downloaded via the
+        \href{https://github.com/fastflow/fastflow}{\textit{fastflow's GitHub page}}, in the \texttt{source\_ff}
+        directory.
     % section how_to_compile_the_program (end)
     \section{How to run the program} % (fold)
     \label{sec:how_to_run_the_program}
@@ -19,7 +22,7 @@
             \texttt{source\_ff} directory if you want to launch the program implemented using fastflow.
             For both the executions, the command is the following:
 
-            \begin{minted}[bgcolor=LightGray,fontsize=\scriptsize]{bash}
+            \begin{minted}[bgcolor=LightGray,fontsize=\footnotesize]{bash}
                 ./main <images-directory> <watermark-file> <parallelism-degree> <output-directory> <delay>
             \end{minted}
 
@@ -38,46 +41,62 @@
             \end{description}
             Here is an example for the standard C++ library execution:
 
-            \begin{minted}[bgcolor=LightGray,fontsize=\scriptsize]{bash}
+            \begin{minted}[bgcolor=LightGray,fontsize=\footnotesize]{bash}
                 ./main ../imgs/ ../watermark.jpg 1 ../output_dir/ 100
             \end{minted}
 
             And here is one for the fastflow execution:
 
-            \begin{minted}[bgcolor=LightGray,fontsize=\scriptsize]{bash}
+            \begin{minted}[bgcolor=LightGray,fontsize=\footnotesize]{bash}
                 ./main ../../imgs/ ../../watermark.jpg 1 ../../output_dir/ 100
             \end{minted}
         % subsection standard_execution (end)
+        \subsection{Sequential execution} % (fold)
+        \label{sub:sequential_execution}
+            If you want to execute the standard version's sequential implementation, you have to use the
+            command described in \ref{sub:standard_execution} and insert $0$ as
+            \texttt{<parallelism-degree>}, while being in the directory containing the standard version's
+            compiled file (the project's directory tree is represented in Figure \ref{fig:directory_tree}).
+        % subsection sequential_execution (end)
         \subsection{Python execution} % (fold)
         \label{sub:python_execution}
             The Python execution is the one I've used in order to collect the data that you can see displayed in
             Figure \ref{fig:performances}. This kind of execution is a bit more complex, but the script itself
             provides all the informations in order to safely run the simulation.
 
-            \begin{minted}[bgcolor=LightGray,fontsize=\tiny]{bash}
+            \begin{minted}[bgcolor=LightGray,fontsize=\footnotesize]{bash}
                 usage: extract_results.py [-h] [-e {standard,fastflow}] [-i IMAGEDIR]
-                              [-w WATERMARK] [-o OUTPUTDIR] [-l LOOP] [-d DELAY]
-                              [-n NAME]
+                          [-w WATERMARK] [-o OUTPUTDIR] [-l LOOP] [-d DELAY]
+                          [-n NAME] [-s STANDARD]
 
                 This script collects data about the execution time of the main program.
 
                 optional arguments:
                   -h, --help            show this help message and exit
                   -e {standard,fastflow}, --executable {standard,fastflow}
-                                        Which executable should be tested.
+                                        Which executable should be tested. Default is
+                                        (default: standard)
                   -i IMAGEDIR, --imagedir IMAGEDIR
                                         The path leading to the directory containing the
-                                        images.
+                                        images. (default: ../imgs)
                   -w WATERMARK, --watermark WATERMARK
-                                        The path leading to the watermark file.
+                                        The path leading to the watermark file. (default:
+                                        ../watermark.jpg)
                   -o OUTPUTDIR, --outputdir OUTPUTDIR
-                                        The path leading to the output directory
+                                        The path leading to the output directory (default:
+                                        ../output_dir)
                   -l LOOP, --loop LOOP  Number of iterations the main program have to be
-                                        executed.
+                                        executed. (default: 10)
                   -d DELAY, --delay DELAY
                                         The delay represents the time that the emitter have to
                                         wait before sending a new image into the stream.
+                                        (default: 100)
                   -n NAME, --name NAME  Name of the file in which the results will be saved.
+                                        (default: None)
+                  -s STANDARD, --standard STANDARD
+                                        The ABSOLUTE PATH leading to the csv file containing
+                                        the informations about the standard execution
+                                        (default: ../../results/)
             \end{minted}
 
             The main difference between this execution and the one described in section
@@ -86,13 +105,6 @@
             chapter \ref{cha:performance_modeling}. Finally the collected data are saved in a csv file named
             after \texttt{NAME}.
         % subsection python_execution (end)
-        \subsection{Sequential execution} % (fold)
-        \label{sub:sequential_execution}
-            If you want to execute the standard version's sequential implementation, you have to use the
-            command described in \ref{sub:standard_execution} and insert $0$ as
-            \texttt{<parallelism-degree>}, while being in the directory containing the standard version's
-            compiled file (the project's directory tree is represented in Figure \ref{fig:directory_tree}).
-        % subsection sequential_execution (end)
     % section how_to_run_the_program (end)
     \section{Output example} % (fold)
     \label{sec:output_example}

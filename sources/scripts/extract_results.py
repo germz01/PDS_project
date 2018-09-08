@@ -22,10 +22,12 @@ def check_path(possible_path):
 
 parser = argparse.ArgumentParser(description="This script collects data" +
                                  " about the execution time of the main " +
-                                 "program.")
+                                 "program.",
+                                 formatter_class=argparse.
+                                 ArgumentDefaultsHelpFormatter)
 parser.add_argument('-e', '--executable', type=str, choices=['standard',
                     'fastflow'], default='standard',
-                    help='Which executable should be tested.')
+                    help='Which executable should be tested. Default is')
 parser.add_argument('-i', '--imagedir', type=check_path,
                     default='../imgs', help='The path leading to the '
                     'directory containing the images.')
@@ -45,7 +47,7 @@ parser.add_argument('-n', '--name', type=str,
                     help='Name of the file in which the results will be '
                     'saved.')
 parser.add_argument('-s', '--standard', type=str, default='../../results/',
-                    help='The ABSOLUTE PATH leading to the csv file'
+                    help='The ABSOLUTE PATH leading to the csv file '
                     'containing the informations about the standard execution')
 args = vars(parser.parse_args())
 

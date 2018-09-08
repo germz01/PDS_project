@@ -29,6 +29,19 @@
         workers try to access the queue while another worker is extracting a task, they'll be notified as soon as
         the queue become available again. Once that there are no more images to process, the emitter inserts a
         \texttt{nullptr} into the queue.
+    \section{Master and workers} % (fold)
+    \label{sec:master_and_workers}
+        In the standard version of the program the master thread is represented by the \texttt{main} function,
+        which execute the function \texttt{fill\_queue} till there are no more images to upload. In the fastflow
+        version of the program this role is taken by a fastflow's \texttt{Emitter}, which basically performs
+        the same function as the standard version's master thread.
+        The number of workers to generate during every execution is given by the user via the
+        \texttt{<parallelism-degree>} parameter, as described in appendix \ref{sec:how_to_run_the_program}. At
+        run-time, every worker is represented by a thread. In the standard version of the program, the workers
+        are contained inside an array of type \text{std::thread}, while in the fastflow version of the program
+        it is used a \texttt{std::vector<ff\_node *>}, and then a \texttt{ff\_farm<>}, following the examples
+        provided in \cite{DSPM}.
+    % section master_and_workers (end)
     \section{Applying the watermark} % (fold)
     \label{sec:applying_the_watermark}
         From the implementation point of view, every image is a $X{\times}Y$ matrix, being $X$ the image's wight

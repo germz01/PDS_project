@@ -27,7 +27,7 @@ parser = argparse.ArgumentParser(description="This script collects data" +
                                  ArgumentDefaultsHelpFormatter)
 parser.add_argument('-e', '--executable', type=str, choices=['standard',
                     'fastflow'], default='standard',
-                    help='Which executable should be tested. Default is')
+                    help='Which executable should be tested.')
 parser.add_argument('-i', '--imagedir', type=check_path,
                     default='../imgs', help='The path leading to the '
                     'directory containing the images.')

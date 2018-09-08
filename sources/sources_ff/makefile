@@ -2,10 +2,10 @@ UNAME := $(shell uname)
 
 ifeq ($(UNAME),Darwin)
 	CXX := g++-8
-	CXXFLAGS := -D no_default_mapping -g -I./fastflow -I/usr/X11R6/include -O2 -std=c++17
+	CXXFLAGS := -D no_default_mapping -g -I./fastflow-master -I/usr/X11R6/include -O2 -std=c++17
 else
 	CXX := g++
-	CXXFLAGS := -D no_default_mapping -g -I./fastflow -O2 -std=c++17
+	CXXFLAGS := -D no_default_mapping -g -I/usr/local/fastflow -O2 -std=c++17
 endif
 
 LDFLAGS := -L/usr/X11R6/lib -pthread

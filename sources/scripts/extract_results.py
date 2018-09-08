@@ -32,7 +32,7 @@ parser.add_argument('-i', '--imagedir', type=check_path,
 parser.add_argument('-w', '--watermark', type=check_path,
                     default='../watermark.jpg', help='The path leading to the'
                     ' watermark file.')
-parser.add_argument('-o', '--outputdir', type=check_path,
+parser.add_argument('-o', '--outputdir', type=str,
                     default='../output_dir', help='The path leading to the'
                     ' output directory')
 parser.add_argument('-l', '--loop', type=int, default=10,
@@ -44,9 +44,15 @@ parser.add_argument('-d', '--delay', type=int, default=100,
 parser.add_argument('-n', '--name', type=str,
                     help='Name of the file in which the results will be '
                     'saved.')
+parser.add_argument('-s', '--standard', type=str, default='../../results/',
+                    help='The ABSOLUTE PATH leading to the csv file'
+                    'containing the informations about the standard execution')
 args = vars(parser.parse_args())
 
-with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
+to_open = '../../results' + args['name'] + '.csv' if \
+    os.path.exists('../../results') else './' + args['name'] + '.csv'
+
+with open(to_open, 'w') as csvfile:
     if args['executable'] == 'standard':
         os.chdir(standard)
     else:
@@ -87,10 +93,13 @@ with open('../../results/' + args['name'] + '.csv', 'w') as csvfile:
                 if args['executable'] == 'fastflow':
                     f = None
 
-                    if platform.system() == 'Darwin':
-                        f = open('../../results/performance_laptop.csv')
+                    if os.path.exists('../../results'):
+                        if platform.system() == 'Darwin':
+                            f = open('../../results/performance_laptop.csv')
+                        else:
+                            f = open('../../results/performance_xeon.csv')
                     else:
-                        f = open('../../results/performance_xeon.csv')
+                        f = open(args['standard'])
 
                     reader = csv.DictReader(f)
                     t_seq = float(reader.next()['COMPLETION TIME'])
